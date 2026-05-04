@@ -285,10 +285,14 @@ export class DatabaseStorage implements IStorage {
 
   async updateFormSettings(updates: InsertFormSettings): Promise<FormSettings> {
     const current = await this.getFormSettings();
-    const setValues: Record<string, unknown> = { ...updates };
+    const setValues: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(updates)) {
+      if (v !== undefined) setValues[k] = v;
+    }
     if (updates.verificationCode && updates.verificationCode !== current.verificationCode) {
       setValues.codeUpdatedAt = new Date();
     }
+    if (Object.keys(setValues).length === 0) return current;
     const [updated] = await db
       .update(formSettings)
       .set(setValues)

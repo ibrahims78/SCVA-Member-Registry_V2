@@ -248,8 +248,13 @@ export default function Settings() {
         title: isAr ? "تم الحفظ" : "Saved",
         description: isAr ? "تم حفظ إعدادات نموذج التسجيل بنجاح." : "Registration form settings saved successfully.",
       });
-    } catch {
-      toast({ title: isAr ? "خطأ في الحفظ" : "Save failed", variant: "destructive" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      toast({
+        title: isAr ? "خطأ في الحفظ" : "Save failed",
+        description: msg || undefined,
+        variant: "destructive",
+      });
     } finally {
       setIsSavingFormSettings(false);
     }
