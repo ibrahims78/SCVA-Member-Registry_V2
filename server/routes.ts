@@ -821,17 +821,43 @@ export async function registerRoutes(
       const raw = readFileSync(workflowPath, "utf-8");
       const workflow = JSON.parse(raw);
 
-      // Inject notification email into the admin notification node
-      if (settings.notificationEmail) {
-        for (const node of workflow.nodes) {
-          if (node.id === "email-admin" && node.parameters) {
-            node.parameters.toEmail = settings.notificationEmail;
+      // ── Inject all available settings into the workflow before download ──
+
+      const adminEmail = settings.notificationEmail || "";
+      const verificationCode = settings.verificationCode || "SCVA-2026";
+
+      for (const node of workflow.nodes) {
+        // 1. Verify Invitation Code — hardcode the actual code into jsCode
+        if (node.id === "verify-code" && node.parameters?.jsCode) {
+          node.parameters.jsCode = node.parameters.jsCode.replace(
+            /\/\/ ── Read from n8n Variables[\s\S]*?\/\/ \$vars not available — using default fallback\n\}/,
+            `// ── Verification code injected from SCVA app settings:\nconst expectedCode = '${verificationCode.trim().toUpperCase()}';`
+          );
+        }
+
+        // 2. Admin email node — inject toEmail + fromEmail
+        if (node.id === "email-admin" && node.parameters) {
+          if (adminEmail) {
+            node.parameters.toEmail = adminEmail;
+            node.parameters.fromEmail = adminEmail;
           }
         }
-        // Also embed it in __meta so it's visible in the setup notes
-        if (workflow.__meta) {
-          workflow.__meta.adminEmail = settings.notificationEmail;
+
+        // 3. Member confirmation email node — inject fromEmail
+        if (node.id === "email-member" && node.parameters) {
+          if (adminEmail) {
+            node.parameters.fromEmail = adminEmail;
+          }
         }
+      }
+
+      // Embed summary in __meta for reference
+      if (workflow.__meta) {
+        workflow.__meta.injectedSettings = {
+          adminEmail: adminEmail || "(not set)",
+          verificationCode: verificationCode,
+          note: "Excel paths (SCVA_AR_EXCEL_PATH, SCVA_EN_EXCEL_PATH) and SMTP credentials must still be set in n8n.",
+        };
       }
 
       res
