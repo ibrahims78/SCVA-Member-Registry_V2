@@ -1,0 +1,364 @@
+{
+  "name": "SCVA Member Registration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "scva-member-register",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook — Receive Registration",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "scva-member-register"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ══════════════════════════════════════════════════\n//  Node 2: Verify Invitation Code\n//  Compare the submitted code against the stored one.\n// ══════════════════════════════════════════════════\n\nconst body = $input.first().json.body || $input.first().json;\nconst submittedCode = (body.verificationCode || '').trim().toUpperCase();\n\n// ── Set your invitation code in the environment variable\n// ── SCVA_VERIFICATION_CODE in n8n, or hard-code below:\nconst expectedCode = ($env.SCVA_VERIFICATION_CODE || 'SCVA-2026').trim().toUpperCase();\n\nif (!submittedCode) {\n  throw new Error('MISSING_CODE: رمز التحقق مطلوب');\n}\n\nif (submittedCode !== expectedCode) {\n  throw new Error('INVALID_VERIFICATION_CODE: رمز التحقق غير صحيح');\n}\n\n// Pass data downstream\nreturn [{ json: body }];"
+      },
+      "id": "verify-code",
+      "name": "Verify Invitation Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ══════════════════════════════════════════════════\n//  Node 3: Format & Validate Data\n//  Clean input, add metadata, validate required fields.\n// ══════════════════════════════════════════════════\n\nconst d = $input.first().json;\n\n// Required fields\nconst required = ['firstName', 'lastName', 'fullName', 'englishName'];\nfor (const f of required) {\n  if (!d[f] || !String(d[f]).trim()) {\n    throw new Error(`MISSING_REQUIRED: الحقل المطلوب غير موجود: ${f}`);\n  }\n}\n\n// Normalize\nconst clean = (v) => (v ? String(v).trim() : '');\n\nconst language = clean(d.language) || 'ar';\nconst submittedAt = d.submittedAt || new Date().toISOString();\nconst dateLabel = new Date(submittedAt).toLocaleString(\n  language === 'ar' ? 'ar-SY' : 'en-GB',\n  { dateStyle: 'long', timeStyle: 'short' }\n);\n\nconst genderMap = {\n  ar: { male: 'ذكر', female: 'أنثى' },\n  en: { male: 'Male', female: 'Female' },\n};\nconst specialtyMap = {\n  ar: { cardiology: 'قلبية داخلية', cardiac_surgery: 'جراحة قلب' },\n  en: { cardiology: 'Cardiology', cardiac_surgery: 'Cardiac Surgery' },\n};\nconst membershipMap = {\n  ar: { original: 'عضو أصيل', associate: 'عضو مشارك' },\n  en: { original: 'Original Member', associate: 'Associate Member' },\n};\n\nconst gender = genderMap[language]?.[d.gender] || clean(d.gender);\nconst specialty = specialtyMap[language]?.[d.specialty] || clean(d.specialty);\nconst membershipType = membershipMap[language]?.[d.membershipType] || clean(d.membershipType);\n\nreturn [{\n  json: {\n    // Raw identifiers\n    language,\n    verificationCode: clean(d.verificationCode),\n    // Names\n    firstName:    clean(d.firstName),\n    lastName:     clean(d.lastName),\n    fullName:     clean(d.fullName),\n    fatherName:   clean(d.fatherName),\n    englishName:  clean(d.englishName),\n    // Personal\n    birthDate:    clean(d.birthDate),\n    gender:       gender,\n    genderRaw:    clean(d.gender),\n    // Professional\n    specialty:    specialty,\n    specialtyRaw: clean(d.specialty),\n    membershipType:    membershipType,\n    membershipTypeRaw: clean(d.membershipType),\n    escId:        clean(d.escId),\n    // Contact\n    email:        clean(d.email),\n    phone:        clean(d.phone),\n    city:         clean(d.city),\n    workAddress:  clean(d.workAddress),\n    joinDate:     clean(d.joinDate),\n    // Meta\n    submittedAt,\n    dateLabel,\n  }\n}];"
+      },
+      "id": "format-data",
+      "name": "Format & Validate Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "lang-check",
+              "leftValue": "={{ $json.language }}",
+              "rightValue": "ar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-language",
+      "name": "Language? Arabic : English",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "={{ $env.SCVA_AR_EXCEL_PATH || '/path/to/نموذج-الأعضاء-عربي.xlsx' }}"
+      },
+      "id": "read-ar-excel",
+      "name": "Read Arabic Excel",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [1120, 180]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "={{ $env.SCVA_EN_EXCEL_PATH || '/path/to/SCVA-Members-Template-EN.xlsx' }}"
+      },
+      "id": "read-en-excel",
+      "name": "Read English Excel",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [1120, 420]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "filePath": "={{ $env.SCVA_AR_EXCEL_PATH || '/path/to/نموذج-الأعضاء-عربي.xlsx' }}",
+        "options": {
+          "headerRow": 1,
+          "startRow": 2
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "الاسم الأول": "={{ $('Format & Validate Data').item.json.firstName }}",
+            "الكنية": "={{ $('Format & Validate Data').item.json.lastName }}",
+            "الاسم بالعربية": "={{ $('Format & Validate Data').item.json.fullName }}",
+            "اسم الأب": "={{ $('Format & Validate Data').item.json.fatherName }}",
+            "الاسم بالإنجليزية": "={{ $('Format & Validate Data').item.json.englishName }}",
+            "تاريخ الميلاد": "={{ $('Format & Validate Data').item.json.birthDate }}",
+            "الجنس": "={{ $('Format & Validate Data').item.json.gender }}",
+            "التخصص": "={{ $('Format & Validate Data').item.json.specialty }}",
+            "البريد الإلكتروني": "={{ $('Format & Validate Data').item.json.email }}",
+            "رقم الهاتف": "={{ $('Format & Validate Data').item.json.phone }}",
+            "المدينة": "={{ $('Format & Validate Data').item.json.city }}",
+            "عنوان العمل": "={{ $('Format & Validate Data').item.json.workAddress }}",
+            "تاريخ الانضمام": "={{ $('Format & Validate Data').item.json.joinDate }}",
+            "نوع العضوية": "={{ $('Format & Validate Data').item.json.membershipType }}",
+            "معرّف الجمعية الأوروبية": "={{ $('Format & Validate Data').item.json.escId }}",
+            "تاريخ التسجيل": "={{ $('Format & Validate Data').item.json.submittedAt }}"
+          }
+        }
+      },
+      "id": "append-ar-row",
+      "name": "Append Row — Arabic Excel",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [1340, 180]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "filePath": "={{ $env.SCVA_EN_EXCEL_PATH || '/path/to/SCVA-Members-Template-EN.xlsx' }}",
+        "options": {
+          "headerRow": 1,
+          "startRow": 2
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "First name": "={{ $('Format & Validate Data').item.json.firstName }}",
+            "Last name": "={{ $('Format & Validate Data').item.json.lastName }}",
+            "Full name (Arabic)": "={{ $('Format & Validate Data').item.json.fullName }}",
+            "Father's name": "={{ $('Format & Validate Data').item.json.fatherName }}",
+            "Full name (English)": "={{ $('Format & Validate Data').item.json.englishName }}",
+            "Date of birth": "={{ $('Format & Validate Data').item.json.birthDate }}",
+            "Gender": "={{ $('Format & Validate Data').item.json.genderRaw }}",
+            "Specialty": "={{ $('Format & Validate Data').item.json.specialtyRaw }}",
+            "Email": "={{ $('Format & Validate Data').item.json.email }}",
+            "Phone": "={{ $('Format & Validate Data').item.json.phone }}",
+            "City": "={{ $('Format & Validate Data').item.json.city }}",
+            "Work address": "={{ $('Format & Validate Data').item.json.workAddress }}",
+            "Join date": "={{ $('Format & Validate Data').item.json.joinDate }}",
+            "Membership type": "={{ $('Format & Validate Data').item.json.membershipTypeRaw }}",
+            "ESC ID": "={{ $('Format & Validate Data').item.json.escId }}",
+            "Submitted at": "={{ $('Format & Validate Data').item.json.submittedAt }}"
+          }
+        }
+      },
+      "id": "append-en-row",
+      "name": "Append Row — English Excel",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [1340, 420]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "merge-branches",
+      "name": "Merge Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_FROM || 'noreply@scva.org' }}",
+        "toEmail": "={{ $env.SCVA_ADMIN_EMAIL || 'admin@scva.org' }}",
+        "subject": "=🔔 تسجيل عضو جديد — {{ $('Format & Validate Data').item.json.fullName || $('Format & Validate Data').item.json.englishName }} | الجمعية القلبية السورية",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html>\n<html dir=\"rtl\" lang=\"ar\">\n<head><meta charset=\"UTF-8\"><style>\n  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1a202c; direction: rtl; }\n  .card { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }\n  .header { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); color: white; padding: 28px 32px; text-align: center; }\n  .header h1 { margin: 0; font-size: 20px; font-weight: 700; }\n  .header p { margin: 6px 0 0; opacity: 0.8; font-size: 13px; }\n  .badge { display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 16px; font-size: 12px; margin-top: 12px; }\n  .body { padding: 28px 32px; }\n  .section-title { font-size: 13px; font-weight: 700; color: #06b6d4; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin: 0 0 16px; }\n  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }\n  td { padding: 9px 12px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }\n  td:first-child { color: #64748b; font-weight: 600; width: 40%; white-space: nowrap; }\n  td:last-child { color: #1e293b; font-weight: 500; }\n  .action-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 16px; }\n  .action-box p { margin: 0; font-size: 13px; color: #15803d; }\n  .footer { background: #f8fafc; padding: 16px 32px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }\n</style></head>\n<body><div class=\"card\">\n  <div class=\"header\">\n    <h1>🔔 إشعار تسجيل عضو جديد</h1>\n    <p>الجمعية القلبية السورية — Syrian Cardiovascular Association</p>\n    <span class=\"badge\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'عربي → ملف أعضاء عربي' : 'English → English members file' }}</span>\n  </div>\n  <div class=\"body\">\n    <p class=\"section-title\">بيانات العضو</p>\n    <table>\n      <tr><td>الاسم الكامل</td><td>{{ $('Format & Validate Data').item.json.fullName }}</td></tr>\n      <tr><td>الاسم بالإنجليزية</td><td>{{ $('Format & Validate Data').item.json.englishName }}</td></tr>\n      <tr><td>التخصص</td><td>{{ $('Format & Validate Data').item.json.specialty }}</td></tr>\n      <tr><td>نوع العضوية</td><td>{{ $('Format & Validate Data').item.json.membershipType }}</td></tr>\n      <tr><td>المدينة</td><td>{{ $('Format & Validate Data').item.json.city }}</td></tr>\n      <tr><td>البريد الإلكتروني</td><td>{{ $('Format & Validate Data').item.json.email || '—' }}</td></tr>\n      <tr><td>رقم الهاتف</td><td>{{ $('Format & Validate Data').item.json.phone || '—' }}</td></tr>\n      <tr><td>تاريخ التسجيل</td><td>{{ $('Format & Validate Data').item.json.dateLabel }}</td></tr>\n    </table>\n    <div class=\"action-box\">\n      <p>✅ تم حفظ البيانات تلقائياً في ملف الإكسل المناسب.</p>\n      <p>📋 يُرجى مراجعة البيانات وإتمام إجراءات قبول العضوية.</p>\n    </div>\n  </div>\n  <div class=\"footer\">هذا إشعار تلقائي من نظام SCVA Members Management — لا تردّ على هذا البريد</div>\n</div></body></html>",
+        "options": {}
+      },
+      "id": "email-admin",
+      "name": "Email Admin — Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "email-check",
+              "leftValue": "={{ $('Format & Validate Data').item.json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-member-email",
+      "name": "Member has email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.SMTP_FROM || 'noreply@scva.org' }}",
+        "toEmail": "={{ $('Format & Validate Data').item.json.email }}",
+        "subject": "={{ $('Format & Validate Data').item.json.language === 'ar' ? '✅ تم استلام طلب انضمامك | الجمعية القلبية السورية' : '✅ Your Registration Request Received | Syrian Cardiovascular Association' }}",
+        "emailType": "html",
+        "message": "={{ $('Format & Validate Data').item.json.language === 'ar' ? `<!DOCTYPE html><html dir=\"rtl\" lang=\"ar\"><head><meta charset=\"UTF-8\"><style>body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;margin:0;padding:20px;color:#1a202c;direction:rtl}.card{max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}.header{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:white;padding:28px 32px;text-align:center}.header h1{margin:0;font-size:20px;font-weight:700}.header p{margin:6px 0 0;opacity:.8;font-size:13px}.body{padding:28px 32px}.greeting{font-size:16px;font-weight:700;margin-bottom:8px}.section-title{font-size:13px;font-weight:700;color:#06b6d4;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin:20px 0 16px}table{width:100%;border-collapse:collapse}td{padding:9px 12px;font-size:13px;border-bottom:1px solid #f1f5f9;vertical-align:top}td:first-child{color:#64748b;font-weight:600;width:40%}td:last-child{color:#1e293b;font-weight:500}.steps-box{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:20px 0}.steps-box p{margin:0 0 8px;font-size:13px;color:#0369a1;font-weight:700}.steps-box ol{margin:0;padding-right:20px;font-size:13px;color:#475569;line-height:2}.footer{background:#f8fafc;padding:16px 32px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0}</style></head><body><div class=\"card\"><div class=\"header\"><h1>✅ تم استلام طلب انضمامك</h1><p>الجمعية القلبية السورية — Syrian Cardiovascular Association</p></div><div class=\"body\"><p class=\"greeting\">عزيزي/عزيزتي ${$('Format & Validate Data').item.json.fullName || $('Format & Validate Data').item.json.firstName}،</p><p style=\"font-size:14px;color:#475569\">يسعدنا إخبارك بأنه تم استلام طلب انضمامك إلى الجمعية القلبية السورية بنجاح.</p><p class=\"section-title\">ملخص بياناتك المُرسَلة</p><table><tr><td>الاسم الكامل</td><td>${$('Format & Validate Data').item.json.fullName}</td></tr><tr><td>التخصص</td><td>${$('Format & Validate Data').item.json.specialty}</td></tr><tr><td>نوع العضوية</td><td>${$('Format & Validate Data').item.json.membershipType}</td></tr><tr><td>المدينة</td><td>${$('Format & Validate Data').item.json.city || '—'}</td></tr><tr><td>تاريخ التسجيل</td><td>${$('Format & Validate Data').item.json.dateLabel}</td></tr></table><div class=\"steps-box\"><p>الخطوات التالية:</p><ol><li>سيقوم فريق الجمعية بمراجعة بياناتك</li><li>سيتم التواصل معك خلال الأيام القادمة</li><li>ستصلك رسالة تأكيد بقبول عضويتك</li></ol></div><p style=\"font-size:13px;color:#475569\">شكراً لانضمامك إلى الجمعية القلبية السورية. نتطلع إلى مشاركتك الفاعلة.</p></div><div class=\"footer\">مع أطيب التحيات — إدارة الجمعية القلبية السورية | Syrian Cardiovascular Association</div></div></body></html>` : `<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><style>body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;margin:0;padding:20px;color:#1a202c}.card{max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}.header{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:white;padding:28px 32px;text-align:center}.header h1{margin:0;font-size:20px;font-weight:700}.header p{margin:6px 0 0;opacity:.8;font-size:13px}.body{padding:28px 32px}.greeting{font-size:16px;font-weight:700;margin-bottom:8px}.section-title{font-size:13px;font-weight:700;color:#06b6d4;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin:20px 0 16px}table{width:100%;border-collapse:collapse}td{padding:9px 12px;font-size:13px;border-bottom:1px solid #f1f5f9;vertical-align:top}td:first-child{color:#64748b;font-weight:600;width:40%}td:last-child{color:#1e293b;font-weight:500}.steps-box{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:20px 0}.steps-box p{margin:0 0 8px;font-size:13px;color:#0369a1;font-weight:700}.steps-box ol{margin:0;padding-left:20px;font-size:13px;color:#475569;line-height:2}.footer{background:#f8fafc;padding:16px 32px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0}</style></head><body><div class=\"card\"><div class=\"header\"><h1>✅ Your Registration Request Received</h1><p>Syrian Cardiovascular Association — الجمعية القلبية السورية</p></div><div class=\"body\"><p class=\"greeting\">Dear ${$('Format & Validate Data').item.json.englishName || $('Format & Validate Data').item.json.firstName},</p><p style=\"font-size:14px;color:#475569\">We are pleased to confirm that your membership application to the Syrian Cardiovascular Association has been successfully received.</p><p class=\"section-title\">Your Submitted Information</p><table><tr><td>Full Name</td><td>${$('Format & Validate Data').item.json.englishName}</td></tr><tr><td>Specialty</td><td>${$('Format & Validate Data').item.json.specialty}</td></tr><tr><td>Membership Type</td><td>${$('Format & Validate Data').item.json.membershipType}</td></tr><tr><td>City</td><td>${$('Format & Validate Data').item.json.city || '—'}</td></tr><tr><td>Submission Date</td><td>${$('Format & Validate Data').item.json.dateLabel}</td></tr></table><div class=\"steps-box\"><p>Next Steps:</p><ol><li>Our team will review your application</li><li>You will be contacted within the coming days</li><li>A confirmation of your membership will be sent to you</li></ol></div><p style=\"font-size:14px;color:#475569\">Thank you for joining the Syrian Cardiovascular Association. We look forward to your active participation.</p></div><div class=\"footer\">Best regards — Syrian Cardiovascular Association Management | الجمعية القلبية السورية</div></div></body></html>` }}",
+        "options": {}
+      },
+      "id": "email-member",
+      "name": "Email Member — Confirmation",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [2220, 180]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'success', message: 'تم استلام بياناتك بنجاح', language: $('Format & Validate Data').item.json.language }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-success",
+      "name": "Respond — 200 Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2440, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'error', code: $execution.error?.message?.includes('INVALID_VERIFICATION_CODE') ? 'INVALID_VERIFICATION_CODE' : 'PROCESSING_ERROR', message_ar: $execution.error?.message?.includes('INVALID_VERIFICATION_CODE') ? 'رمز التحقق غير صحيح. يُرجى التواصل مع إدارة الجمعية.' : 'فشل معالجة الطلب. يُرجى المحاولة لاحقاً.', message_en: $execution.error?.message?.includes('INVALID_VERIFICATION_CODE') ? 'Invalid verification code. Please contact the association.' : 'Failed to process request. Please try again later.' }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "respond-error",
+      "name": "Respond — Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 500]
+    }
+  ],
+  "connections": {
+    "Webhook — Receive Registration": {
+      "main": [
+        [{ "node": "Verify Invitation Code", "type": "main", "index": 0 }]
+      ]
+    },
+    "Verify Invitation Code": {
+      "main": [
+        [{ "node": "Format & Validate Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Format & Validate Data": {
+      "main": [
+        [{ "node": "Language? Arabic : English", "type": "main", "index": 0 }]
+      ]
+    },
+    "Language? Arabic : English": {
+      "main": [
+        [{ "node": "Read Arabic Excel", "type": "main", "index": 0 }],
+        [{ "node": "Read English Excel", "type": "main", "index": 0 }]
+      ]
+    },
+    "Read Arabic Excel": {
+      "main": [
+        [{ "node": "Append Row — Arabic Excel", "type": "main", "index": 0 }]
+      ]
+    },
+    "Read English Excel": {
+      "main": [
+        [{ "node": "Append Row — English Excel", "type": "main", "index": 0 }]
+      ]
+    },
+    "Append Row — Arabic Excel": {
+      "main": [
+        [{ "node": "Merge Branches", "type": "main", "index": 0 }]
+      ]
+    },
+    "Append Row — English Excel": {
+      "main": [
+        [{ "node": "Merge Branches", "type": "main", "index": 1 }]
+      ]
+    },
+    "Merge Branches": {
+      "main": [
+        [{ "node": "Email Admin — Notification", "type": "main", "index": 0 }]
+      ]
+    },
+    "Email Admin — Notification": {
+      "main": [
+        [{ "node": "Member has email?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Member has email?": {
+      "main": [
+        [{ "node": "Email Member — Confirmation", "type": "main", "index": 0 }],
+        [{ "node": "Respond — 200 Success", "type": "main", "index": 0 }]
+      ]
+    },
+    "Email Member — Confirmation": {
+      "main": [
+        [{ "node": "Respond — 200 Success", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "SCVA", "createdAt": "2026-05-04T00:00:00.000Z" }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2026-05-04T00:00:00.000Z",
+  "versionId": "scva-v1.0",
+  "__meta": {
+    "description": "SCVA Member Registration Workflow — يستقبل بيانات الأعضاء من نموذج HTML الخارجي، يتحقق من رمز الدعوة، يحفظ البيانات في ملف إكسل (عربي أو إنجليزي)، ويُرسل إشعارات بريدية.",
+    "version": "1.0.0",
+    "createdAt": "2026-05-04",
+    "setupSteps": [
+      "1. استورد هذا الملف في n8n عبر: Settings > Import Workflow",
+      "2. اضبط متغيرات البيئة التالية في n8n:",
+      "   - SCVA_VERIFICATION_CODE : رمز الدعوة (مثال: SCVA-2026)",
+      "   - SCVA_ADMIN_EMAIL      : بريد المسؤول",
+      "   - SCVA_AR_EXCEL_PATH    : المسار الكامل لملف الإكسل العربي",
+      "   - SCVA_EN_EXCEL_PATH    : المسار الكامل لملف الإكسل الإنجليزي",
+      "   - SMTP_HOST             : سيرفر البريد",
+      "   - SMTP_USER             : اسم مستخدم البريد",
+      "   - SMTP_PASS             : كلمة مرور البريد",
+      "   - SMTP_FROM             : عنوان المُرسِل",
+      "3. فعّل الـ Workflow",
+      "4. انسخ رابط Webhook والصقه في إعدادات برنامج SCVA"
+    ],
+    "webhookPath": "/webhook/scva-member-register",
+    "supportedLanguages": ["ar", "en"],
+    "excelFiles": {
+      "arabic": "نموذج-الأعضاء-عربي.xlsx",
+      "english": "SCVA-Members-Template-EN.xlsx"
+    }
+  }
+}

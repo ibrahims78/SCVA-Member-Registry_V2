@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نموذج تسجيل العضوية — الجمعية القلبية السورية</title>
+<meta name="description" content="سجّل بياناتك كعضو في الجمعية القلبية السورية">
+<style>
+  :root {
+    --bg-main: #0f2027;
+    --bg-card: rgba(255,255,255,0.05);
+    --bg-card-hover: rgba(255,255,255,0.08);
+    --bg-input: rgba(255,255,255,0.07);
+    --bg-input-focus: rgba(255,255,255,0.12);
+    --border: rgba(255,255,255,0.12);
+    --border-focus: #06b6d4;
+    --text-primary: #f0f4f8;
+    --text-secondary: rgba(240,244,248,0.65);
+    --text-muted: rgba(240,244,248,0.4);
+    --accent: #06b6d4;
+    --accent-hover: #0891b2;
+    --accent-light: rgba(6,182,212,0.15);
+    --success: #10b981;
+    --success-light: rgba(16,185,129,0.15);
+    --error: #ef4444;
+    --error-light: rgba(239,68,68,0.12);
+    --warning: #f59e0b;
+    --warning-light: rgba(245,158,11,0.12);
+    --step-inactive: rgba(255,255,255,0.2);
+    --gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  .light-mode {
+    --bg-main: #f0f4f8;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
+    --bg-input: #f1f5f9;
+    --bg-input-focus: #ffffff;
+    --border: #e2e8f0;
+    --border-focus: #06b6d4;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --accent: #0891b2;
+    --accent-hover: #0e7490;
+    --accent-light: rgba(8,145,178,0.1);
+    --success: #059669;
+    --success-light: rgba(5,150,105,0.1);
+    --error: #dc2626;
+    --error-light: rgba(220,38,38,0.08);
+    --warning: #d97706;
+    --warning-light: rgba(217,119,6,0.1);
+    --step-inactive: #cbd5e1;
+    --gradient: linear-gradient(135deg, #1e3a4a 0%, #2d5a6e 50%, #3a7a8e 100%);
+    --shadow: 0 4px 20px rgba(0,0,0,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', 'Noto Sans Arabic', Tahoma, Arial, sans-serif;
+    background: var(--gradient);
+    min-height: 100vh;
+    color: var(--text-primary);
+    transition: background 0.3s, color 0.3s;
+  }
+  .light-mode body { background: var(--bg-main); }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,32,39,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .light-mode .toolbar { background: rgba(255,255,255,0.9); }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--accent-light); border: 1px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
+  .logo-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+  .toolbar-actions { display: flex; gap: 8px; }
+  .btn-icon {
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-primary); border-radius: var(--radius-sm);
+    padding: 6px 14px; cursor: pointer; font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    transition: all 0.2s;
+  }
+  .btn-icon:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+
+  /* ── Main Container ── */
+  .container {
+    max-width: 680px; margin: 0 auto;
+    padding: 32px 16px 64px;
+  }
+
+  /* ── Form Card ── */
+  .form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+  }
+  .light-mode .form-card { background: var(--bg-card); }
+
+  /* ── Header ── */
+  .form-header {
+    padding: 28px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .form-header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .form-header p { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── Progress Bar ── */
+  .progress-bar {
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .progress-track {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 10px;
+  }
+  .step-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+    background: var(--step-inactive); color: var(--text-muted);
+    border: 2px solid transparent;
+    transition: all 0.3s;
+  }
+  .step-dot.active {
+    background: var(--accent); color: white;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .step-dot.done {
+    background: var(--success); color: white;
+    border-color: var(--success);
+  }
+  .step-line {
+    flex: 1; height: 2px;
+    background: var(--step-inactive);
+    transition: background 0.3s;
+  }
+  .step-line.done { background: var(--success); }
+  .step-labels {
+    display: flex; justify-content: space-between;
+    margin-top: 6px;
+  }
+  .step-label {
+    font-size: 10px; color: var(--text-muted);
+    text-align: center; flex: 1;
+    transition: color 0.3s;
+  }
+  .step-label.active { color: var(--accent); font-weight: 600; }
+  .step-label.done { color: var(--success); }
+  .progress-pct {
+    font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 2px;
+  }
+
+  /* ── Step Content ── */
+  .step { display: none; padding: 28px; }
+  .step.active { display: block; }
+
+  .step-title {
+    font-size: 16px; font-weight: 700; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .step-title .step-icon { font-size: 20px; }
+  .step-desc {
+    font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;
+  }
+
+  /* ── Field ── */
+  .field { margin-bottom: 18px; }
+  .field-label {
+    display: block; font-size: 13px; font-weight: 600;
+    margin-bottom: 6px; color: var(--text-primary);
+  }
+  .field-label .req { color: var(--error); margin-inline-start: 3px; }
+  .input-wrap { position: relative; }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s;
+    appearance: none;
+  }
+  .field input::placeholder, .field textarea::placeholder {
+    color: var(--text-muted);
+  }
+  .field input:focus, .field select:focus {
+    background: var(--bg-input-focus);
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  .field input.error { border-color: var(--error); }
+  .field input.valid { border-color: var(--success); }
+  .field-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .field-error { font-size: 12px; color: var(--error); margin-top: 4px; display: none; }
+  .field-error.show { display: block; }
+  .field-status {
+    position: absolute; inset-inline-end: 10px; top: 50%; transform: translateY(-50%);
+    font-size: 15px; pointer-events: none;
+  }
+
+  /* select arrow */
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 12px center;
+    padding-left: 32px;
+  }
+  [dir="rtl"] .field select {
+    background-position: right 12px center;
+    padding-right: 32px; padding-left: 14px;
+  }
+
+  /* ── Field Grid ── */
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 500px) { .field-grid { grid-template-columns: 1fr; } }
+
+  /* ── Verification Step ── */
+  .verify-box {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 24px; text-align: center; margin-bottom: 24px;
+  }
+  .verify-box .verify-icon { font-size: 40px; margin-bottom: 12px; }
+  .verify-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .verify-box p { font-size: 13px; color: var(--text-secondary); }
+  .code-input-wrap { position: relative; margin-top: 20px; }
+  .code-input-wrap input {
+    font-size: 20px; font-weight: 700; letter-spacing: 4px;
+    text-align: center; padding: 14px 20px;
+    background: var(--bg-input); border: 2px solid var(--border);
+    border-radius: var(--radius); color: var(--text-primary); width: 100%;
+    outline: none; font-family: monospace; transition: all 0.2s;
+  }
+  .code-input-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .code-input-wrap input.error { border-color: var(--error); }
+  .code-input-wrap input.valid { border-color: var(--success); }
+  .attempts-warning {
+    background: var(--warning-light); border: 1px solid var(--warning);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    font-size: 12px; color: var(--warning); margin-top: 12px;
+    display: none;
+  }
+  .attempts-warning.show { display: block; }
+  .lockout-msg {
+    background: var(--error-light); border: 1px solid var(--error);
+    border-radius: var(--radius-sm); padding: 14px;
+    text-align: center; font-size: 13px; color: var(--error);
+    margin-top: 16px; display: none;
+  }
+  .lockout-msg.show { display: block; }
+  .lockout-countdown { font-weight: 700; font-size: 16px; }
+
+  /* ── Review Step ── */
+  .review-section { margin-bottom: 20px; }
+  .review-section-title {
+    font-size: 13px; font-weight: 700; color: var(--accent);
+    border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .review-edit {
+    font-size: 11px; color: var(--accent); cursor: pointer;
+    padding: 3px 8px; border: 1px solid var(--accent);
+    border-radius: 4px; transition: all 0.2s;
+  }
+  .review-edit:hover { background: var(--accent-light); }
+  .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 500px) { .review-grid { grid-template-columns: 1fr; } }
+  .review-item { }
+  .review-item-label { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+  .review-item-value { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+  .review-item-value.empty { color: var(--text-muted); font-style: italic; }
+  .confirm-check {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--accent-light); border: 1px solid var(--accent);
+    border-radius: var(--radius-sm); padding: 14px;
+    margin-bottom: 20px; cursor: pointer;
+  }
+  .confirm-check input[type="checkbox"] { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; cursor: pointer; accent-color: var(--accent); }
+  .confirm-check label { font-size: 13px; cursor: pointer; }
+
+  /* ── Buttons ── */
+  .btn-row {
+    display: flex; gap: 12px; justify-content: space-between;
+    padding-top: 8px;
+  }
+  .btn {
+    padding: 11px 24px; border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600; font-family: inherit;
+    cursor: pointer; border: none; transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .btn-primary {
+    background: var(--accent); color: white; flex: 1;
+    justify-content: center;
+  }
+  .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    background: transparent; border: 1px solid var(--border); color: var(--text-primary);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: var(--error); color: white; }
+  .btn-danger:hover { opacity: 0.85; }
+
+  /* ── Alert Boxes ── */
+  .alert {
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 13px; margin-bottom: 16px; display: none;
+  }
+  .alert.show { display: flex; align-items: flex-start; gap: 8px; }
+  .alert-error { background: var(--error-light); border: 1px solid var(--error); color: var(--error); }
+  .alert-success { background: var(--success-light); border: 1px solid var(--success); color: var(--success); }
+  .alert-warning { background: var(--warning-light); border: 1px solid var(--warning); color: var(--warning); }
+
+  /* ── Spinner ── */
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  .spinner.show { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Success Page ── */
+  #success-page { display: none; padding: 40px 28px; text-align: center; }
+  #success-page.show { display: block; }
+  .success-icon { font-size: 64px; animation: pop 0.5s ease; margin-bottom: 16px; }
+  @keyframes pop { 0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
+  .success-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .success-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
+  .summary-card {
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; text-align: start;
+    margin-bottom: 20px;
+  }
+  .summary-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--accent); }
+  .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .summary-row:last-child { border: none; }
+  .summary-label { color: var(--text-muted); }
+  .summary-val { font-weight: 600; }
+  .success-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .print-hint { font-size: 11px; color: var(--text-muted); margin-top: 16px; }
+
+  /* ── Auto-save banner ── */
+  .restore-banner {
+    background: var(--accent-light); border: 1px solid var(--accent);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 13px; margin-bottom: 16px; display: none;
+    align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .restore-banner.show { display: flex; }
+
+  /* ── Mobile ── */
+  @media (max-width: 500px) {
+    .container { padding: 16px 8px 48px; }
+    .step { padding: 20px 16px; }
+    .form-header { padding: 20px 16px 16px; }
+    .progress-bar { padding: 16px 16px 12px; }
+  }
+
+  @media print {
+    .toolbar, .btn-row, .success-actions { display: none !important; }
+    body { background: white !important; color: black !important; }
+    .form-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════ TOOLBAR ══════════════════════════════ -->
+<div class="toolbar">
+  <div class="logo">
+    <div class="logo-icon">❤️</div>
+    <div>
+      <div class="logo-text" id="logo-text">الجمعية القلبية السورية</div>
+      <div class="logo-sub">SCVA • Syrian Cardiovascular Association</div>
+    </div>
+  </div>
+  <div class="toolbar-actions">
+    <button class="btn-icon" onclick="toggleTheme()" id="theme-btn" title="تبديل الثيم">
+      <span id="theme-icon">☀️</span>
+    </button>
+    <button class="btn-icon" onclick="toggleLang()" id="lang-btn">
+      <span id="lang-label">EN</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ MAIN ══════════════════════════════ -->
+<div class="container">
+  <div class="form-card">
+
+    <!-- Header -->
+    <div class="form-header">
+      <h1 id="hdr-title">نموذج طلب العضوية</h1>
+      <p id="hdr-sub">الجمعية القلبية السورية — عبّئ بياناتك بدقة لإتمام التسجيل</p>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar" id="progress-section">
+      <div class="progress-track">
+        <div class="step-dot active" id="dot-1">1</div>
+        <div class="step-line" id="line-1"></div>
+        <div class="step-dot" id="dot-2">2</div>
+        <div class="step-line" id="line-2"></div>
+        <div class="step-dot" id="dot-3">3</div>
+        <div class="step-line" id="line-3"></div>
+        <div class="step-dot" id="dot-4">4</div>
+      </div>
+      <div class="step-labels">
+        <span class="step-label active" id="lbl-1" data-ar="التحقق" data-en="Verify"></span>
+        <span class="step-label" id="lbl-2" data-ar="البيانات" data-en="Basic info"></span>
+        <span class="step-label" id="lbl-3" data-ar="التواصل" data-en="Contact"></span>
+        <span class="step-label" id="lbl-4" data-ar="المراجعة" data-en="Review"></span>
+      </div>
+      <div class="progress-pct" id="progress-pct">25%</div>
+    </div>
+
+    <!-- ─────────────── STEP 1: VERIFICATION ─────────────── -->
+    <div class="step active" id="step-1">
+      <div class="step-title">
+        <span class="step-icon">🔐</span>
+        <span id="s1-title">التحقق من الهوية</span>
+      </div>
+      <p class="step-desc" id="s1-desc">أدخل رمز الدعوة الذي حصلت عليه من الجمعية للمتابعة.</p>
+
+      <div class="restore-banner" id="restore-banner">
+        <span id="restore-msg">وجدنا بياناتك السابقة، هل تريد استكمالها؟</span>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <button class="btn btn-primary" style="padding:6px 14px;font-size:12px" onclick="restoreData()">
+            <span id="restore-yes">استكمال</span>
+          </button>
+          <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px" onclick="clearSaved()">
+            <span id="restore-no">تجاهل</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="verify-box">
+        <div class="verify-icon">🎟️</div>
+        <h3 id="vc-title">أدخل رمز الدعوة</h3>
+        <p id="vc-desc">احصل على رمز الدعوة من إدارة الجمعية القلبية السورية</p>
+        <div class="code-input-wrap">
+          <input type="text" id="code-input" autocomplete="off" spellcheck="false"
+            placeholder="SCVA-2026" maxlength="30"
+            oninput="this.value=this.value.toUpperCase()" />
+        </div>
+        <div class="attempts-warning" id="attempts-warning">
+          <span id="attempts-msg"></span>
+        </div>
+        <div class="lockout-msg" id="lockout-msg">
+          <div id="lockout-text"></div>
+          <div class="lockout-countdown" id="lockout-countdown"></div>
+        </div>
+      </div>
+
+      <div class="alert alert-error" id="code-error">
+        <span>⚠️</span><span id="code-error-msg"></span>
+      </div>
+
+      <div class="btn-row" style="justify-content:flex-end">
+        <button class="btn btn-primary" id="btn-verify" onclick="verifyCode()">
+          <span class="spinner" id="spinner-verify"></span>
+          <span id="btn-verify-txt">التحقق والمتابعة</span>
+          <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ─────────────── STEP 2: BASIC INFO ─────────────── -->
+    <div class="step" id="step-2">
+      <div class="step-title">
+        <span class="step-icon">👤</span>
+        <span id="s2-title">البيانات الأساسية</span>
+      </div>
+      <p class="step-desc" id="s2-desc">الحقول المميزة بـ <span style="color:var(--error)">★</span> إلزامية ولا يمكن المتابعة بدونها.</p>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="field-label" id="lbl-fn">الاسم الأول<span class="req">★</span></label>
+          <div class="input-wrap">
+            <input type="text" id="f-first" placeholder="" oninput="liveValidate('f-first')" />
+            <span class="field-status" id="st-first"></span>
+          </div>
+          <div class="field-error" id="err-first" data-ar="الاسم الأول مطلوب" data-en="First name is required"></div>
+        </div>
+        <div class="field">
+          <label class="field-label" id="lbl-ln">الكنية<span class="req">★</span></label>
+          <div class="input-wrap">
+            <input type="text" id="f-last" placeholder="" oninput="liveValidate('f-last')" />
+            <span class="field-status" id="st-last"></span>
+          </div>
+          <div class="field-error" id="err-last" data-ar="الكنية مطلوبة" data-en="Last name is required"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" id="lbl-fullname">الاسم الكامل بالعربية<span class="req">★</span></label>
+        <div class="input-wrap">
+          <input type="text" id="f-fullname" placeholder="مثال: محمد علي الأحمد"
+            oninput="liveValidate('f-fullname')" />
+          <span class="field-status" id="st-fullname"></span>
+        </div>
+        <div class="field-error" id="err-fullname"
+          data-ar="الاسم الكامل بالعربية مطلوب ويجب أن يحتوي على حروف عربية"
+          data-en="Arabic full name is required and must contain Arabic characters"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" id="lbl-en-name">الاسم الكامل بالإنجليزية<span class="req">★</span></label>
+        <div class="input-wrap">
+          <input type="text" id="f-en-name" placeholder="e.g. Mohammad Ali Al-Ahmad"
+            dir="ltr" oninput="liveValidate('f-en-name')" />
+          <span class="field-status" id="st-en-name"></span>
+        </div>
+        <div class="field-error" id="err-en-name"
+          data-ar="الاسم بالإنجليزية مطلوب"
+          data-en="English name is required"></div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="field-label" id="lbl-father">اسم الأب</label>
+          <input type="text" id="f-father" />
+        </div>
+        <div class="field">
+          <label class="field-label" id="lbl-dob">تاريخ الميلاد</label>
+          <input type="date" id="f-dob" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" id="lbl-gender">الجنس</label>
+        <select id="f-gender">
+          <option value="" id="opt-gender-empty"></option>
+          <option value="male" id="opt-male"></option>
+          <option value="female" id="opt-female"></option>
+        </select>
+      </div>
+
+      <div class="alert alert-error" id="err-step2"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(1)">
+          <span>←</span> <span id="btn-back-2">رجوع</span>
+        </button>
+        <button class="btn btn-primary" onclick="nextStep(2)">
+          <span id="btn-next-2">التالي</span> <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ─────────────── STEP 3: CONTACT & PROFESSIONAL ─────────────── -->
+    <div class="step" id="step-3">
+      <div class="step-title">
+        <span class="step-icon">📋</span>
+        <span id="s3-title">البيانات المهنية والتواصل</span>
+      </div>
+      <p class="step-desc" id="s3-desc">جميع الحقول في هذه الخطوة اختيارية.</p>
+
+      <div class="field">
+        <label class="field-label" id="lbl-specialty">التخصص</label>
+        <select id="f-specialty">
+          <option value="" id="opt-spec-empty"></option>
+          <option value="cardiology" id="opt-cardiology"></option>
+          <option value="cardiac_surgery" id="opt-surgery"></option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" id="lbl-mtype">نوع العضوية</label>
+        <select id="f-mtype">
+          <option value="" id="opt-mtype-empty"></option>
+          <option value="original" id="opt-original"></option>
+          <option value="associate" id="opt-associate"></option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" id="lbl-email">البريد الإلكتروني</label>
+        <div class="input-wrap">
+          <input type="email" id="f-email" dir="ltr"
+            placeholder="example@email.com" oninput="liveValidate('f-email')" />
+          <span class="field-status" id="st-email"></span>
+        </div>
+        <div class="field-error" id="err-email"
+          data-ar="صيغة البريد الإلكتروني غير صحيحة"
+          data-en="Invalid email format"></div>
+        <div class="field-hint" id="hint-email">ستصلك رسالة تأكيد إذا أدخلت بريدك الإلكتروني</div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="field-label" id="lbl-phone">رقم الهاتف</label>
+          <input type="tel" id="f-phone" dir="ltr" placeholder="+963 9X XXXX XXX" />
+        </div>
+        <div class="field">
+          <label class="field-label" id="lbl-city">المدينة</label>
+          <input type="text" id="f-city" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" id="lbl-work">عنوان العمل</label>
+        <input type="text" id="f-work" />
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="field-label" id="lbl-joindate">تاريخ الانضمام</label>
+          <input type="date" id="f-joindate" />
+        </div>
+        <div class="field">
+          <label class="field-label" id="lbl-esc">معرّف الجمعية الأوروبية (ESC ID)</label>
+          <input type="text" id="f-esc" dir="ltr" />
+        </div>
+      </div>
+
+      <div class="alert alert-error" id="err-step3"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(2)">
+          <span>←</span> <span id="btn-back-3">رجوع</span>
+        </button>
+        <button class="btn btn-primary" onclick="nextStep(3)">
+          <span id="btn-next-3">مراجعة البيانات</span> <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ─────────────── STEP 4: REVIEW ─────────────── -->
+    <div class="step" id="step-4">
+      <div class="step-title">
+        <span class="step-icon">✅</span>
+        <span id="s4-title">مراجعة وإرسال</span>
+      </div>
+      <p class="step-desc" id="s4-desc">راجع بياناتك بعناية قبل الإرسال النهائي.</p>
+
+      <!-- Review: Basic -->
+      <div class="review-section">
+        <div class="review-section-title">
+          <span id="rev-basic-title">البيانات الأساسية</span>
+          <span class="review-edit" onclick="goStep(2)" id="rev-edit-basic">تعديل</span>
+        </div>
+        <div class="review-grid" id="review-basic"></div>
+      </div>
+
+      <!-- Review: Contact -->
+      <div class="review-section">
+        <div class="review-section-title">
+          <span id="rev-contact-title">بيانات التواصل والمهنة</span>
+          <span class="review-edit" onclick="goStep(3)" id="rev-edit-contact">تعديل</span>
+        </div>
+        <div class="review-grid" id="review-contact"></div>
+      </div>
+
+      <!-- Confirm checkbox -->
+      <div class="confirm-check">
+        <input type="checkbox" id="confirm-check" />
+        <label for="confirm-check" id="confirm-label">أؤكد أن البيانات المُدخَلة صحيحة ودقيقة وأوافق على مشاركتها مع إدارة الجمعية القلبية السورية.</label>
+      </div>
+
+      <div class="alert alert-error" id="err-submit"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep(3)">
+          <span>←</span> <span id="btn-back-4">رجوع</span>
+        </button>
+        <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">
+          <span class="spinner" id="spinner-submit"></span>
+          <span id="btn-submit-txt">إرسال الطلب</span>
+          <span>📤</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ─────────────── SUCCESS PAGE ─────────────── -->
+    <div id="success-page">
+      <div class="success-icon">✅</div>
+      <div class="success-title" id="success-title"></div>
+      <div class="success-sub" id="success-sub"></div>
+      <div class="summary-card">
+        <h4 id="summary-title">ملخص بياناتك</h4>
+        <div id="summary-rows"></div>
+      </div>
+      <div class="print-hint" id="print-hint">يمكنك طباعة هذه الصفحة للاحتفاظ بسجل طلبك</div>
+      <div class="success-actions" style="margin-top:20px">
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ <span id="btn-print">طباعة</span></button>
+        <button class="btn btn-primary" onclick="resetForm()">➕ <span id="btn-new">تسجيل عضو آخر</span></button>
+      </div>
+    </div>
+
+  </div><!-- /form-card -->
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SCVA Member Registration Form — Full Implementation
+// ═══════════════════════════════════════════════════════════
+
+// ── State ──
+let currentLang = localStorage.getItem('scva-lang') || 'ar';
+let currentStep = 1;
+let isSubmitting = false;
+let verificationDone = false;
+let webhookUrl = '';
+let lockoutEnd = 0;
+let lockoutTimer = null;
+let autoSaveTimer = null;
+const MAX_ATTEMPTS = 3;
+const LOCKOUT_MINUTES = 5;
+const SAVE_KEY = 'scva-form-data';
+const ATTEMPTS_KEY = 'scva-attempts';
+const LOCKOUT_KEY = 'scva-lockout';
+
+// ── Translations ──
+const T = {
+  ar: {
+    logoText: 'الجمعية القلبية السورية',
+    hdrTitle: 'نموذج طلب العضوية',
+    hdrSub: 'الجمعية القلبية السورية — عبّئ بياناتك بدقة لإتمام التسجيل',
+    s1Title: 'التحقق من الهوية',
+    s1Desc: 'أدخل رمز الدعوة الذي حصلت عليه من الجمعية للمتابعة.',
+    s2Title: 'البيانات الأساسية',
+    s2Desc: 'الحقول المميزة بـ ★ إلزامية ولا يمكن المتابعة بدونها.',
+    s3Title: 'البيانات المهنية والتواصل',
+    s3Desc: 'جميع الحقول في هذه الخطوة اختيارية.',
+    s4Title: 'مراجعة وإرسال',
+    s4Desc: 'راجع بياناتك بعناية قبل الإرسال النهائي.',
+    vcTitle: 'أدخل رمز الدعوة',
+    vcDesc: 'احصل على رمز الدعوة من إدارة الجمعية القلبية السورية',
+    btnVerify: 'التحقق والمتابعة',
+    btnNext: 'التالي',
+    btnBack: 'رجوع',
+    btnReview: 'مراجعة البيانات',
+    btnSubmit: 'إرسال الطلب',
+    btnPrint: 'طباعة',
+    btnNewMember: 'تسجيل عضو آخر',
+    lblFn: 'الاسم الأول', lblLn: 'الكنية',
+    lblFullname: 'الاسم الكامل بالعربية',
+    lblEnName: 'الاسم الكامل بالإنجليزية',
+    lblFather: 'اسم الأب', lblDob: 'تاريخ الميلاد',
+    lblGender: 'الجنس', lblSpecialty: 'التخصص',
+    lblMtype: 'نوع العضوية', lblEmail: 'البريد الإلكتروني',
+    lblPhone: 'رقم الهاتف', lblCity: 'المدينة',
+    lblWork: 'عنوان العمل', lblJoindate: 'تاريخ الانضمام',
+    lblEsc: 'معرّف الجمعية الأوروبية (ESC ID)',
+    optGenderEmpty: '-- اختر الجنس --',
+    optMale: 'ذكر', optFemale: 'أنثى',
+    optSpecEmpty: '-- اختر التخصص --',
+    optCardiology: 'قلبية داخلية', optSurgery: 'جراحة قلب',
+    optMtypeEmpty: '-- اختر نوع العضوية --',
+    optOriginal: 'عضو أصيل', optAssociate: 'عضو مشارك',
+    hintEmail: 'ستصلك رسالة تأكيد إذا أدخلت بريدك الإلكتروني',
+    codePlaceholder: 'SCVA-2026',
+    codeError: 'رمز التحقق غير صحيح. يُرجى التواصل مع إدارة الجمعية.',
+    codeRequired: 'يُرجى إدخال رمز الدعوة',
+    attemptsMsg: (n) => `تبقّى لديك ${n} محاولة${n===1?'':n===2?'تان':'ات'} قبل تجميد النموذج.`,
+    lockoutText: 'تجاوزت عدد المحاولات المسموح بها. يُرجى المحاولة بعد:',
+    confirmLabel: 'أؤكد أن البيانات المُدخَلة صحيحة ودقيقة وأوافق على مشاركتها مع إدارة الجمعية القلبية السورية.',
+    confirmRequired: 'يُرجى تأكيد صحة البيانات أولاً',
+    webhookMissing: 'لم يتم تكوين نظام الاستقبال بعد. يُرجى التواصل مع إدارة الجمعية.',
+    submitError: 'فشل إرسال البيانات. يُرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً.',
+    submitSending: 'جارٍ الإرسال...',
+    successTitle: (name) => `شكراً ${name}! تم استلام طلبك بنجاح ✅`,
+    successSub: 'سيتواصل معك فريق الجمعية قريباً لإتمام إجراءات القبول.',
+    summaryTitle: 'ملخص بياناتك المُرسَلة',
+    printHint: 'يمكنك طباعة هذه الصفحة للاحتفاظ بسجل طلبك',
+    revBasic: 'البيانات الأساسية', revContact: 'بيانات التواصل والمهنة',
+    revEdit: 'تعديل',
+    restoreMsg: 'وجدنا بياناتك السابقة، هل تريد استكمالها؟',
+    restoreYes: 'استكمال', restoreNo: 'تجاهل',
+    lbl1: 'التحقق', lbl2: 'البيانات', lbl3: 'التواصل', lbl4: 'المراجعة',
+    notSet: '—',
+    genderMale: 'ذكر', genderFemale: 'أنثى',
+    cardiology: 'قلبية داخلية', cardiac_surgery: 'جراحة قلب',
+    original: 'عضو أصيل', associate: 'عضو مشارك',
+    lang: 'EN'
+  },
+  en: {
+    logoText: 'Syrian Cardiovascular Association',
+    hdrTitle: 'Membership Registration Form',
+    hdrSub: 'Syrian Cardiovascular Association — Please fill in your details accurately',
+    s1Title: 'Identity Verification',
+    s1Desc: 'Enter the invitation code you received from the association to proceed.',
+    s2Title: 'Basic Information',
+    s2Desc: 'Fields marked with ★ are required.',
+    s3Title: 'Professional & Contact Info',
+    s3Desc: 'All fields in this step are optional.',
+    s4Title: 'Review & Submit',
+    s4Desc: 'Review your information carefully before final submission.',
+    vcTitle: 'Enter Invitation Code',
+    vcDesc: 'Get the invitation code from the SCVA administration',
+    btnVerify: 'Verify & Continue',
+    btnNext: 'Next',
+    btnBack: 'Back',
+    btnReview: 'Review Data',
+    btnSubmit: 'Submit Application',
+    btnPrint: 'Print',
+    btnNewMember: 'Register Another Member',
+    lblFn: 'First name', lblLn: 'Last name',
+    lblFullname: 'Full name (Arabic)',
+    lblEnName: 'Full name (English)',
+    lblFather: "Father's name", lblDob: 'Date of birth',
+    lblGender: 'Gender', lblSpecialty: 'Specialty',
+    lblMtype: 'Membership type', lblEmail: 'Email',
+    lblPhone: 'Phone', lblCity: 'City',
+    lblWork: 'Work address', lblJoindate: 'Join date',
+    lblEsc: 'ESC ID',
+    optGenderEmpty: '-- Select gender --',
+    optMale: 'Male', optFemale: 'Female',
+    optSpecEmpty: '-- Select specialty --',
+    optCardiology: 'Cardiology', optSurgery: 'Cardiac Surgery',
+    optMtypeEmpty: '-- Select membership type --',
+    optOriginal: 'Original Member', optAssociate: 'Associate Member',
+    hintEmail: 'A confirmation email will be sent if you provide your email',
+    codePlaceholder: 'SCVA-2026',
+    codeError: 'Invalid verification code. Please contact the SCVA administration.',
+    codeRequired: 'Please enter the invitation code',
+    attemptsMsg: (n) => `You have ${n} attempt${n===1?'':'s'} remaining before the form is locked.`,
+    lockoutText: 'You have exceeded the allowed attempts. Please try again in:',
+    confirmLabel: 'I confirm that the information I have entered is accurate and I agree to share it with the Syrian Cardiovascular Association.',
+    confirmRequired: 'Please confirm the accuracy of your information first',
+    webhookMissing: 'The registration system is not configured yet. Please contact the association.',
+    submitError: 'Failed to submit. Please check your internet connection and try again.',
+    submitSending: 'Submitting...',
+    successTitle: (name) => `Thank you, ${name}! Your application was received ✅`,
+    successSub: 'The SCVA team will contact you soon to complete the membership process.',
+    summaryTitle: 'Your Submitted Information',
+    printHint: 'You can print this page to keep a record of your application',
+    revBasic: 'Basic Information', revContact: 'Contact & Professional Info',
+    revEdit: 'Edit',
+    restoreMsg: 'We found your previous data. Would you like to continue where you left off?',
+    restoreYes: 'Continue', restoreNo: 'Start over',
+    lbl1: 'Verify', lbl2: 'Basic info', lbl3: 'Contact', lbl4: 'Review',
+    notSet: '—',
+    genderMale: 'Male', genderFemale: 'Female',
+    cardiology: 'Cardiology', cardiac_surgery: 'Cardiac Surgery',
+    original: 'Original Member', associate: 'Associate Member',
+    lang: 'عربي'
+  }
+};
+
+// ── Apply Language ──
+function applyLang() {
+  const L = T[currentLang];
+  const dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.setAttribute('lang', currentLang);
+  document.documentElement.setAttribute('dir', dir);
+
+  document.getElementById('logo-text').textContent = L.logoText;
+  document.getElementById('hdr-title').textContent = L.hdrTitle;
+  document.getElementById('hdr-sub').textContent = L.hdrSub;
+  document.getElementById('s1-title').textContent = L.s1Title;
+  document.getElementById('s1-desc').textContent = L.s1Desc;
+  document.getElementById('s2-title').textContent = L.s2Title;
+  document.getElementById('s2-desc').innerHTML = L.s2Desc;
+  document.getElementById('s3-title').textContent = L.s3Title;
+  document.getElementById('s3-desc').textContent = L.s3Desc;
+  document.getElementById('s4-title').textContent = L.s4Title;
+  document.getElementById('s4-desc').textContent = L.s4Desc;
+  document.getElementById('vc-title').textContent = L.vcTitle;
+  document.getElementById('vc-desc').textContent = L.vcDesc;
+  document.getElementById('btn-verify-txt').textContent = L.btnVerify;
+  document.getElementById('btn-next-2').textContent = L.btnNext;
+  document.getElementById('btn-back-2').textContent = L.btnBack;
+  document.getElementById('btn-next-3').textContent = L.btnReview;
+  document.getElementById('btn-back-3').textContent = L.btnBack;
+  document.getElementById('btn-submit-txt').textContent = L.btnSubmit;
+  document.getElementById('btn-back-4').textContent = L.btnBack;
+  document.getElementById('btn-print').textContent = L.btnPrint;
+  document.getElementById('btn-new').textContent = L.btnNewMember;
+  document.getElementById('confirm-label').textContent = L.confirmLabel;
+  document.getElementById('lbl-fn').innerHTML = L.lblFn + '<span class="req">★</span>';
+  document.getElementById('lbl-ln').innerHTML = L.lblLn + '<span class="req">★</span>';
+  document.getElementById('lbl-fullname').innerHTML = L.lblFullname + '<span class="req">★</span>';
+  document.getElementById('lbl-en-name').innerHTML = L.lblEnName + '<span class="req">★</span>';
+  document.getElementById('lbl-father').textContent = L.lblFather;
+  document.getElementById('lbl-dob').textContent = L.lblDob;
+  document.getElementById('lbl-gender').textContent = L.lblGender;
+  document.getElementById('lbl-specialty').textContent = L.lblSpecialty;
+  document.getElementById('lbl-mtype').textContent = L.lblMtype;
+  document.getElementById('lbl-email').textContent = L.lblEmail;
+  document.getElementById('lbl-phone').textContent = L.lblPhone;
+  document.getElementById('lbl-city').textContent = L.lblCity;
+  document.getElementById('lbl-work').textContent = L.lblWork;
+  document.getElementById('lbl-joindate').textContent = L.lblJoindate;
+  document.getElementById('lbl-esc').textContent = L.lblEsc;
+  document.getElementById('hint-email').textContent = L.hintEmail;
+  document.getElementById('code-input').placeholder = L.codePlaceholder;
+  document.getElementById('opt-gender-empty').textContent = L.optGenderEmpty;
+  document.getElementById('opt-male').textContent = L.optMale;
+  document.getElementById('opt-female').textContent = L.optFemale;
+  document.getElementById('opt-spec-empty').textContent = L.optSpecEmpty;
+  document.getElementById('opt-cardiology').textContent = L.optCardiology;
+  document.getElementById('opt-surgery').textContent = L.optSurgery;
+  document.getElementById('opt-mtype-empty').textContent = L.optMtypeEmpty;
+  document.getElementById('opt-original').textContent = L.optOriginal;
+  document.getElementById('opt-associate').textContent = L.optAssociate;
+  document.getElementById('rev-basic-title').textContent = L.revBasic;
+  document.getElementById('rev-contact-title').textContent = L.revContact;
+  document.getElementById('rev-edit-basic').textContent = L.revEdit;
+  document.getElementById('rev-edit-contact').textContent = L.revEdit;
+  document.getElementById('restore-msg').textContent = L.restoreMsg;
+  document.getElementById('restore-yes').textContent = L.restoreYes;
+  document.getElementById('restore-no').textContent = L.restoreNo;
+  document.getElementById('lang-label').textContent = L.lang;
+  document.getElementById('summary-title').textContent = L.summaryTitle;
+  document.getElementById('print-hint').textContent = L.printHint;
+  ['lbl-1','lbl-2','lbl-3','lbl-4'].forEach((id, i) => {
+    document.getElementById(id).textContent = [L.lbl1, L.lbl2, L.lbl3, L.lbl4][i];
+  });
+
+  // Update field errors that are shown
+  document.querySelectorAll('.field-error').forEach(el => {
+    const text = el.getAttribute('data-' + currentLang);
+    if (text) el.textContent = text;
+  });
+
+  localStorage.setItem('scva-lang', currentLang);
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'ar' ? 'en' : 'ar';
+  applyLang();
+  if (currentStep === 4) renderReview();
+}
+
+// ── Theme ──
+function applyTheme() {
+  const isDark = localStorage.getItem('scva-theme') !== 'light';
+  if (isDark) {
+    document.body.classList.remove('light-mode');
+    document.getElementById('theme-icon').textContent = '☀️';
+  } else {
+    document.body.classList.add('light-mode');
+    document.getElementById('theme-icon').textContent = '🌙';
+  }
+}
+function toggleTheme() {
+  const isDark = localStorage.getItem('scva-theme') !== 'light';
+  localStorage.setItem('scva-theme', isDark ? 'light' : 'dark');
+  applyTheme();
+}
+
+// ── Progress ──
+function updateProgress() {
+  const pcts = [25, 50, 75, 100];
+  document.getElementById('progress-pct').textContent = pcts[currentStep - 1] + '%';
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('dot-' + i);
+    const lbl = document.getElementById('lbl-' + i);
+    dot.className = 'step-dot';
+    lbl.className = 'step-label';
+    if (i < currentStep) { dot.classList.add('done'); lbl.classList.add('done'); dot.textContent = '✓'; }
+    else if (i === currentStep) { dot.classList.add('active'); lbl.classList.add('active'); dot.textContent = i; }
+    else { dot.textContent = i; }
+  }
+  for (let i = 1; i <= 3; i++) {
+    const line = document.getElementById('line-' + i);
+    line.className = 'step-line' + (i < currentStep ? ' done' : '');
+  }
+}
+
+function goStep(n) {
+  document.getElementById('step-' + currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('step-' + n).classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (n === 4) renderReview();
+}
+
+// ── Lockout ──
+function getAttempts() { return parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0'); }
+function setAttempts(n) { localStorage.setItem(ATTEMPTS_KEY, n); }
+function getLockoutEnd() { return parseInt(localStorage.getItem(LOCKOUT_KEY) || '0'); }
+function setLockoutEnd(ts) { localStorage.setItem(LOCKOUT_KEY, ts); }
+
+function checkLockout() {
+  const end = getLockoutEnd();
+  if (!end || Date.now() >= end) return false;
+  lockoutEnd = end;
+  showLockout();
+  return true;
+}
+
+function showLockout() {
+  document.getElementById('lockout-msg').classList.add('show');
+  document.getElementById('btn-verify').disabled = true;
+  document.getElementById('lockout-text').textContent = T[currentLang].lockoutText;
+  updateLockoutCountdown();
+  if (lockoutTimer) clearInterval(lockoutTimer);
+  lockoutTimer = setInterval(() => {
+    if (Date.now() >= lockoutEnd) {
+      clearInterval(lockoutTimer);
+      localStorage.removeItem(LOCKOUT_KEY);
+      setAttempts(0);
+      document.getElementById('lockout-msg').classList.remove('show');
+      document.getElementById('btn-verify').disabled = false;
+      document.getElementById('lockout-countdown').textContent = '';
+    } else {
+      updateLockoutCountdown();
+    }
+  }, 1000);
+}
+
+function updateLockoutCountdown() {
+  const rem = Math.max(0, lockoutEnd - Date.now());
+  const m = Math.floor(rem / 60000);
+  const s = Math.floor((rem % 60000) / 1000);
+  document.getElementById('lockout-countdown').textContent =
+    `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ── Verify Code ──
+async function verifyCode() {
+  if (checkLockout()) return;
+  const code = document.getElementById('code-input').value.trim();
+  const L = T[currentLang];
+  hideEl('code-error');
+  if (!code) {
+    showErr('code-error', L.codeRequired);
+    document.getElementById('code-input').classList.add('error');
+    return;
+  }
+  setSpinner('spinner-verify', true);
+  document.getElementById('btn-verify').disabled = true;
+  try {
+    const baseUrl = window.location.origin;
+    const res = await fetch(`${baseUrl}/api/public/verify-code?code=${encodeURIComponent(code)}`);
+    const data = await res.json();
+    if (data.valid) {
+      document.getElementById('code-input').classList.remove('error');
+      document.getElementById('code-input').classList.add('valid');
+      setAttempts(0);
+      localStorage.removeItem(LOCKOUT_KEY);
+      verificationDone = true;
+      setTimeout(() => goStep(2), 300);
+    } else {
+      document.getElementById('code-input').classList.add('error');
+      const attempts = getAttempts() + 1;
+      setAttempts(attempts);
+      if (attempts >= MAX_ATTEMPTS) {
+        const end = Date.now() + LOCKOUT_MINUTES * 60 * 1000;
+        setLockoutEnd(end);
+        lockoutEnd = end;
+        showLockout();
+      } else {
+        const rem = MAX_ATTEMPTS - attempts;
+        document.getElementById('attempts-warning').classList.add('show');
+        document.getElementById('attempts-msg').textContent = L.attemptsMsg(rem);
+        showErr('code-error', L.codeError);
+      }
+    }
+  } catch {
+    showErr('code-error', T[currentLang].submitError);
+  } finally {
+    setSpinner('spinner-verify', false);
+    if (!getLockoutEnd() || Date.now() >= getLockoutEnd()) {
+      document.getElementById('btn-verify').disabled = false;
+    }
+  }
+}
+
+// Allow Enter key on code input
+document.getElementById('code-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') verifyCode();
+});
+
+// ── Step Validation ──
+function nextStep(from) {
+  hideEl('err-step' + from);
+  const L = T[currentLang];
+  if (from === 2) {
+    const errors = [];
+    if (!validateRequired('f-first', 'err-first')) errors.push('first');
+    if (!validateRequired('f-last', 'err-last')) errors.push('last');
+    if (!validateArabicName('f-fullname', 'err-fullname')) errors.push('fullname');
+    if (!validateRequired('f-en-name', 'err-en-name')) errors.push('en-name');
+    if (errors.length > 0) {
+      showErr('err-step2', currentLang === 'ar' ? 'يُرجى ملء الحقول الإلزامية أعلاه.' : 'Please fill in all required fields.');
+      document.getElementById('f-' + errors[0]).focus();
+      return;
+    }
+    goStep(3);
+  } else if (from === 3) {
+    const email = document.getElementById('f-email').value.trim();
+    if (email && !isValidEmail(email)) {
+      showErr('err-step3', T[currentLang][currentLang === 'ar' ? 'صيغة البريد الإلكتروني غير صحيحة' : 'err-email']);
+      const errEl = document.getElementById('err-email');
+      if (errEl) { errEl.textContent = T[currentLang].notSet === '—' ? (currentLang === 'ar' ? 'صيغة البريد الإلكتروني غير صحيحة' : 'Invalid email format') : ''; errEl.classList.add('show'); }
+      document.getElementById('f-email').focus();
+      return;
+    }
+    goStep(4);
+  }
+  autoSave();
+}
+
+function validateRequired(id, errId) {
+  const val = document.getElementById(id).value.trim();
+  const errEl = document.getElementById(errId);
+  if (!val) {
+    document.getElementById(id).classList.add('error');
+    document.getElementById('st-' + id.replace('f-','')).textContent = '❌';
+    errEl.textContent = errEl.getAttribute('data-' + currentLang) || '';
+    errEl.classList.add('show');
+    return false;
+  }
+  document.getElementById(id).classList.remove('error');
+  document.getElementById(id).classList.add('valid');
+  document.getElementById('st-' + id.replace('f-','')).textContent = '✅';
+  errEl.classList.remove('show');
+  return true;
+}
+
+function validateArabicName(id, errId) {
+  const val = document.getElementById(id).value.trim();
+  const errEl = document.getElementById(errId);
+  const hasArabic = /[\u0600-\u06FF]/.test(val);
+  if (!val || !hasArabic) {
+    document.getElementById(id).classList.add('error');
+    document.getElementById('st-fullname').textContent = '❌';
+    errEl.textContent = errEl.getAttribute('data-' + currentLang) || '';
+    errEl.classList.add('show');
+    return false;
+  }
+  document.getElementById(id).classList.remove('error');
+  document.getElementById(id).classList.add('valid');
+  document.getElementById('st-fullname').textContent = '✅';
+  errEl.classList.remove('show');
+  return true;
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function liveValidate(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const val = el.value.trim();
+  const key = id.replace('f-','');
+  const stEl = document.getElementById('st-' + key);
+  const errEl = document.getElementById('err-' + key);
+  if (!stEl) return;
+  if (id === 'f-email') {
+    if (!val) { stEl.textContent = ''; if(errEl) errEl.classList.remove('show'); el.classList.remove('error','valid'); return; }
+    if (isValidEmail(val)) { stEl.textContent = '✅'; el.classList.add('valid'); el.classList.remove('error'); if(errEl) errEl.classList.remove('show'); }
+    else { stEl.textContent = '❌'; el.classList.add('error'); el.classList.remove('valid'); if(errEl) { errEl.textContent = errEl.getAttribute('data-' + currentLang) || ''; errEl.classList.add('show'); } }
+  } else if (id === 'f-fullname') {
+    if (!val) { stEl.textContent = ''; el.classList.remove('error','valid'); return; }
+    const ok = /[\u0600-\u06FF]/.test(val) && val.length >= 3;
+    stEl.textContent = ok ? '✅' : '❌';
+    el.classList.toggle('valid', ok); el.classList.toggle('error', !ok);
+    if (errEl) { errEl.classList.toggle('show', !ok); if(!ok) errEl.textContent = errEl.getAttribute('data-' + currentLang) || ''; }
+  } else {
+    if (!val) { stEl.textContent = ''; el.classList.remove('error','valid'); return; }
+    stEl.textContent = '✅'; el.classList.add('valid'); el.classList.remove('error');
+    if(errEl) errEl.classList.remove('show');
+  }
+}
+
+// ── Review Step ──
+function getFieldValue(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  if (el.tagName === 'SELECT') return el.options[el.selectedIndex]?.text || '';
+  return el.value.trim();
+}
+
+function renderReview() {
+  const L = T[currentLang];
+  const basicFields = [
+    { label: L.lblFn, val: document.getElementById('f-first')?.value.trim() },
+    { label: L.lblLn, val: document.getElementById('f-last')?.value.trim() },
+    { label: L.lblFullname, val: document.getElementById('f-fullname')?.value.trim() },
+    { label: L.lblEnName, val: document.getElementById('f-en-name')?.value.trim() },
+    { label: L.lblFather, val: document.getElementById('f-father')?.value.trim() },
+    { label: L.lblDob, val: document.getElementById('f-dob')?.value.trim() },
+    { label: L.lblGender, val: getFieldValue('f-gender') },
+  ];
+  const contactFields = [
+    { label: L.lblSpecialty, val: getFieldValue('f-specialty') },
+    { label: L.lblMtype, val: getFieldValue('f-mtype') },
+    { label: L.lblEmail, val: document.getElementById('f-email')?.value.trim() },
+    { label: L.lblPhone, val: document.getElementById('f-phone')?.value.trim() },
+    { label: L.lblCity, val: document.getElementById('f-city')?.value.trim() },
+    { label: L.lblWork, val: document.getElementById('f-work')?.value.trim() },
+    { label: L.lblJoindate, val: document.getElementById('f-joindate')?.value.trim() },
+    { label: L.lblEsc, val: document.getElementById('f-esc')?.value.trim() },
+  ];
+  const render = (fields) => fields.map(f => `
+    <div class="review-item">
+      <div class="review-item-label">${f.label}</div>
+      <div class="review-item-value ${f.val ? '' : 'empty'}">${f.val || L.notSet}</div>
+    </div>
+  `).join('');
+  document.getElementById('review-basic').innerHTML = render(basicFields);
+  document.getElementById('review-contact').innerHTML = render(contactFields);
+}
+
+// ── Collect Form Data ──
+function collectData() {
+  const gender = document.getElementById('f-gender').value;
+  const specialty = document.getElementById('f-specialty').value;
+  const mtype = document.getElementById('f-mtype').value;
+  return {
+    verificationCode: document.getElementById('code-input').value.trim(),
+    language: currentLang,
+    firstName: document.getElementById('f-first').value.trim(),
+    lastName: document.getElementById('f-last').value.trim(),
+    fullName: document.getElementById('f-fullname').value.trim(),
+    fatherName: document.getElementById('f-father').value.trim(),
+    englishName: document.getElementById('f-en-name').value.trim(),
+    birthDate: document.getElementById('f-dob').value.trim(),
+    gender: gender,
+    specialty: specialty,
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    city: document.getElementById('f-city').value.trim(),
+    workAddress: document.getElementById('f-work').value.trim(),
+    joinDate: document.getElementById('f-joindate').value.trim(),
+    membershipType: mtype,
+    escId: document.getElementById('f-esc').value.trim(),
+    submittedAt: new Date().toISOString(),
+  };
+}
+
+// ── Submit Form ──
+async function submitForm() {
+  if (isSubmitting) return;
+  const L = T[currentLang];
+  hideEl('err-submit');
+
+  if (!document.getElementById('confirm-check').checked) {
+    showErr('err-submit', L.confirmRequired);
+    return;
+  }
+  if (!webhookUrl) {
+    showErr('err-submit', L.webhookMissing);
+    return;
+  }
+
+  isSubmitting = true;
+  setSpinner('spinner-submit', true);
+  document.getElementById('btn-submit').disabled = true;
+  document.getElementById('btn-submit-txt').textContent = L.submitSending;
+
+  const data = collectData();
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok && res.status !== 200) {
+      const errBody = await res.json().catch(() => ({}));
+      if (errBody.code === 'INVALID_VERIFICATION_CODE') {
+        showErr('err-submit', L.codeError);
+        isSubmitting = false;
+        setSpinner('spinner-submit', false);
+        document.getElementById('btn-submit').disabled = false;
+        document.getElementById('btn-submit-txt').textContent = L.btnSubmit;
+        return;
+      }
+      throw new Error('Server error: ' + res.status);
+    }
+    // Success
+    clearSaved(true);
+    showSuccess(data);
+  } catch (err) {
+    showErr('err-submit', L.submitError);
+    isSubmitting = false;
+    setSpinner('spinner-submit', false);
+    document.getElementById('btn-submit').disabled = false;
+    document.getElementById('btn-submit-txt').textContent = L.btnSubmit;
+  }
+}
+
+function showSuccess(data) {
+  const L = T[currentLang];
+  document.getElementById('progress-section').style.display = 'none';
+  document.getElementById('step-4').classList.remove('active');
+  const sp = document.getElementById('success-page');
+  sp.classList.add('show');
+
+  const displayName = data.firstName || data.englishName || data.fullName || '';
+  document.getElementById('success-title').textContent = L.successTitle(displayName);
+  document.getElementById('success-sub').textContent = L.successSub;
+
+  const gMap = { male: L.genderMale, female: L.genderFemale };
+  const sMap = { cardiology: L.cardiology, cardiac_surgery: L.cardiac_surgery };
+  const mMap = { original: L.original, associate: L.associate };
+
+  const rows = [
+    [L.lblFn + ' ' + L.lblLn, (data.firstName + ' ' + data.lastName).trim()],
+    [L.lblFullname, data.fullName],
+    [L.lblEnName, data.englishName],
+    [L.lblSpecialty, sMap[data.specialty] || data.specialty],
+    [L.lblMtype, mMap[data.membershipType] || data.membershipType],
+    [L.lblEmail, data.email],
+    [L.lblCity, data.city],
+    ['Date / التاريخ', new Date(data.submittedAt).toLocaleString(currentLang === 'ar' ? 'ar-SY' : 'en-GB')],
+  ].filter(r => r[1]);
+
+  document.getElementById('summary-rows').innerHTML = rows.map(([k,v]) =>
+    `<div class="summary-row"><span class="summary-label">${k}</span><span class="summary-val">${v}</span></div>`
+  ).join('');
+}
+
+function resetForm() {
+  location.reload();
+}
+
+// ── Auto-save ──
+function autoSave() {
+  const data = {
+    fn: document.getElementById('f-first').value,
+    ln: document.getElementById('f-last').value,
+    fullname: document.getElementById('f-fullname').value,
+    enname: document.getElementById('f-en-name').value,
+    father: document.getElementById('f-father').value,
+    dob: document.getElementById('f-dob').value,
+    gender: document.getElementById('f-gender').value,
+    specialty: document.getElementById('f-specialty').value,
+    mtype: document.getElementById('f-mtype').value,
+    email: document.getElementById('f-email').value,
+    phone: document.getElementById('f-phone').value,
+    city: document.getElementById('f-city').value,
+    work: document.getElementById('f-work').value,
+    joindate: document.getElementById('f-joindate').value,
+    esc: document.getElementById('f-esc').value,
+    code: document.getElementById('code-input').value,
+    step: currentStep,
+    ts: Date.now(),
+  };
+  const hasData = Object.entries(data).some(([k,v]) => k !== 'ts' && k !== 'step' && v);
+  if (hasData) localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+}
+
+function restoreData() {
+  const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+  if (!saved) return;
+  document.getElementById('f-first').value = saved.fn || '';
+  document.getElementById('f-last').value = saved.ln || '';
+  document.getElementById('f-fullname').value = saved.fullname || '';
+  document.getElementById('f-en-name').value = saved.enname || '';
+  document.getElementById('f-father').value = saved.father || '';
+  document.getElementById('f-dob').value = saved.dob || '';
+  document.getElementById('f-gender').value = saved.gender || '';
+  document.getElementById('f-specialty').value = saved.specialty || '';
+  document.getElementById('f-mtype').value = saved.mtype || '';
+  document.getElementById('f-email').value = saved.email || '';
+  document.getElementById('f-phone').value = saved.phone || '';
+  document.getElementById('f-city').value = saved.city || '';
+  document.getElementById('f-work').value = saved.work || '';
+  document.getElementById('f-joindate').value = saved.joindate || '';
+  document.getElementById('f-esc').value = saved.esc || '';
+  if (saved.code) document.getElementById('code-input').value = saved.code;
+  document.getElementById('restore-banner').classList.remove('show');
+}
+
+function clearSaved(silent) {
+  localStorage.removeItem(SAVE_KEY);
+  if (!silent) document.getElementById('restore-banner').classList.remove('show');
+}
+
+function checkRestore() {
+  const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+  if (saved && saved.ts && (Date.now() - saved.ts) < 24 * 60 * 60 * 1000) {
+    document.getElementById('restore-banner').classList.add('show');
+  }
+}
+
+// ── Helpers ──
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg; el.classList.add('show');
+}
+function hideEl(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
+function setSpinner(id, show) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('show', show);
+}
+
+// ── Load Webhook URL ──
+async function loadConfig() {
+  try {
+    const res = await fetch(window.location.origin + '/api/public/form-config');
+    const cfg = await res.json();
+    webhookUrl = cfg.webhookUrl || '';
+  } catch { webhookUrl = ''; }
+}
+
+// ── Init ──
+applyTheme();
+applyLang();
+updateProgress();
+checkLockout();
+checkRestore();
+loadConfig();
+
+// Auto-save every 30s
+autoSaveTimer = setInterval(autoSave, 30000);
+
+// Save on field change for good measure
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('change', autoSave);
+});
+</script>
+</body>
+</html>
