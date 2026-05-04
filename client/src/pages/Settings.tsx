@@ -172,6 +172,11 @@ export default function Settings() {
     dlWorkflowNoSettings: isAr
       ? "يجب حفظ الإعدادات (البريد الإلكتروني ورابط Webhook) قبل تحميل ملف Workflow."
       : "Please save your settings (notification email and webhook URL) before downloading the workflow.",
+    // Form URL
+    formUrlTitle: isAr ? "رابط نموذج التسجيل" : "Registration Form URL",
+    formUrlDesc:  isAr ? "شارك هذا الرابط مع الأعضاء الراغبين في التسجيل." : "Share this link with members who want to register.",
+    formUrlCopied:isAr ? "تم نسخ الرابط" : "Link copied",
+    formUrlOpen:  isAr ? "فتح النموذج" : "Open form",
     // Backup
     backupTitle:  isAr ? "النسخ الاحتياطي" : "Backup",
     backupDesc:   isAr ? "تصدير نسخة احتياطية كاملة لجميع بيانات النظام (الأعضاء، الاشتراكات، المستخدمين)." : "Export a full backup of all system data (members, subscriptions, users).",
@@ -204,6 +209,7 @@ export default function Settings() {
   const [isSavingFormSettings, setIsSavingFormSettings] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [isDownloadingWorkflow, setIsDownloadingWorkflow] = useState(false);
+  const [formUrlCopied, setFormUrlCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1188,6 +1194,51 @@ export default function Settings() {
                   : (isAr ? "حفظ الإعدادات" : "Save settings")}
               </Button>
             </form>
+
+            {/* ── Form URL ── */}
+            <div className="mt-6 pt-5 border-t space-y-3">
+              <div>
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Link2 className="h-3.5 w-3.5 text-primary" />
+                  {L.formUrlTitle}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{L.formUrlDesc}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 rounded-md border bg-muted/40 px-3 py-2 text-sm font-mono truncate select-all dir-ltr" dir="ltr">
+                  {typeof window !== "undefined" ? `${window.location.origin}/form` : "/form"}
+                </code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title={isAr ? "نسخ الرابط" : "Copy link"}
+                  onClick={() => {
+                    const url = `${window.location.origin}/form`;
+                    navigator.clipboard.writeText(url).then(() => {
+                      setFormUrlCopied(true);
+                      setTimeout(() => setFormUrlCopied(false), 2000);
+                    });
+                  }}
+                >
+                  {formUrlCopied ? (
+                    <ClipboardCheck className="h-4 w-4 text-emerald-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 shrink-0"
+                  onClick={() => window.open("/form", "_blank")}
+                >
+                  <X className="h-3.5 w-3.5 rotate-45" />
+                  {L.formUrlOpen}
+                </Button>
+              </div>
+            </div>
 
             {/* ── Workflow Download ── */}
             <div className="mt-6 pt-5 border-t space-y-3">
