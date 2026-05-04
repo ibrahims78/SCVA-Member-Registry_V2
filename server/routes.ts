@@ -805,6 +805,47 @@ export async function registerRoutes(
     }
   });
 
+  // ---------- Admin: download n8n workflow with injected settings ----------
+  app.get("/api/admin/workflow", requireAdmin, async (_req, res, next) => {
+    try {
+      const settings = await storage.getFormSettings();
+
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      const workflowPath = path.resolve(
+        __dirname,
+        "../docs/form_by_n8n/workflow/scva-member-workflow.json",
+      );
+
+      const { readFileSync } = await import("fs");
+      const raw = readFileSync(workflowPath, "utf-8");
+      const workflow = JSON.parse(raw);
+
+      // Inject notification email into the admin notification node
+      if (settings.notificationEmail) {
+        for (const node of workflow.nodes) {
+          if (node.id === "email-admin" && node.parameters) {
+            node.parameters.toEmail = settings.notificationEmail;
+          }
+        }
+        // Also embed it in __meta so it's visible in the setup notes
+        if (workflow.__meta) {
+          workflow.__meta.adminEmail = settings.notificationEmail;
+        }
+      }
+
+      res
+        .setHeader("Content-Type", "application/json")
+        .setHeader(
+          "Content-Disposition",
+          'attachment; filename="scva-member-workflow.json"',
+        )
+        .json(workflow);
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // ---------- Public: serve the external member registration form ----------
   app.get("/form", (_req, res) => {
     const __filename = fileURLToPath(import.meta.url);

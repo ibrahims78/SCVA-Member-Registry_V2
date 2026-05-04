@@ -24,7 +24,7 @@ import {
   Loader2, UserPlus, Pencil, Trash2, ShieldCheck,
   FileSpreadsheet, Download, Upload, DatabaseBackup,
   CheckCircle2, AlertCircle, X, Receipt,
-  Link2, Mail, KeyRound, Eye, EyeOff, Copy, ClipboardCheck,
+  Link2, Mail, KeyRound, Eye, EyeOff, Copy, ClipboardCheck, Workflow,
 } from "lucide-react";
 import { MEMBER_COLUMNS, SUBSCRIPTION_COLUMNS, buildHeaderIndex } from "@/lib/importColumns";
 import { useState, useRef } from "react";
@@ -162,6 +162,16 @@ export default function Settings() {
     expMembersOkD:isAr ? "تم تحميل ملف الأعضاء بنجاح." : "Members file downloaded successfully.",
     expMembersErr:isAr ? "خطأ في التصدير" : "Export failed",
     exporting:    isAr ? "جارٍ التصدير..." : "Exporting...",
+    // Workflow download
+    dlWorkflow:       isAr ? "تحميل ملف Workflow لـ n8n" : "Download n8n Workflow",
+    dlWorkflowD:      isAr ? "حمّل ملف الـ Workflow الجاهز لاستيراده في n8n مع بريد الإشعارات مُدمَج تلقائياً." : "Download the ready-to-import n8n workflow file with the notification email pre-filled.",
+    dlWorkflowBtn:    isAr ? "تحميل Workflow" : "Download Workflow",
+    dlWorkflowOk:     isAr ? "تم تحميل ملف Workflow" : "Workflow downloaded",
+    dlWorkflowOkD:    isAr ? "استورد الملف في n8n عبر: Settings › Import Workflow." : "Import the file in n8n via: Settings › Import Workflow.",
+    dlWorkflowErr:    isAr ? "خطأ في تحميل Workflow" : "Workflow download failed",
+    dlWorkflowNoSettings: isAr
+      ? "يجب حفظ الإعدادات (البريد الإلكتروني ورابط Webhook) قبل تحميل ملف Workflow."
+      : "Please save your settings (notification email and webhook URL) before downloading the workflow.",
     // Backup
     backupTitle:  isAr ? "النسخ الاحتياطي" : "Backup",
     backupDesc:   isAr ? "تصدير نسخة احتياطية كاملة لجميع بيانات النظام (الأعضاء، الاشتراكات، المستخدمين)." : "Export a full backup of all system data (members, subscriptions, users).",
@@ -193,6 +203,7 @@ export default function Settings() {
   const [showCode, setShowCode] = useState(false);
   const [isSavingFormSettings, setIsSavingFormSettings] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [isDownloadingWorkflow, setIsDownloadingWorkflow] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -239,6 +250,36 @@ export default function Settings() {
       setCodeCopied(true);
       setTimeout(() => setCodeCopied(false), 2000);
     });
+  };
+
+  const handleDownloadWorkflow = async () => {
+    const email = formSettingsData?.notificationEmail ?? "";
+    const webhook = formSettingsData?.webhookUrl ?? "";
+    if (!email || !webhook) {
+      toast({
+        title: L.dlWorkflowErr,
+        description: L.dlWorkflowNoSettings,
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsDownloadingWorkflow(true);
+    try {
+      const res = await apiRequest("GET", "/api/admin/workflow");
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "scva-member-workflow.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: L.dlWorkflowOk, description: L.dlWorkflowOkD });
+    } catch {
+      toast({ title: L.dlWorkflowErr, variant: "destructive" });
+    } finally {
+      setIsDownloadingWorkflow(false);
+    }
   };
 
   // Number of admins; used to disable destructive actions on the last admin.
@@ -1015,6 +1056,7 @@ export default function Settings() {
               {isAr ? "جارٍ التحميل..." : "Loading..."}
             </div>
           ) : (
+            <>
             <form
               onSubmit={formSettingsForm.handleSubmit(handleSaveFormSettings)}
               className="space-y-5"
@@ -1146,6 +1188,39 @@ export default function Settings() {
                   : (isAr ? "حفظ الإعدادات" : "Save settings")}
               </Button>
             </form>
+
+            {/* ── Workflow Download ── */}
+            <div className="mt-6 pt-5 border-t space-y-3">
+              <div>
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Workflow className="h-3.5 w-3.5 text-primary" />
+                  {L.dlWorkflow}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{L.dlWorkflowD}</p>
+              </div>
+              {(!formSettingsData?.notificationEmail || !formSettingsData?.webhookUrl) && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 px-3 py-2 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                  <span>{L.dlWorkflowNoSettings}</span>
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2"
+                onClick={handleDownloadWorkflow}
+                disabled={isDownloadingWorkflow || !formSettingsData?.notificationEmail || !formSettingsData?.webhookUrl}
+                data-testid="button-download-workflow"
+              >
+                {isDownloadingWorkflow ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {isDownloadingWorkflow ? (isAr ? "جارٍ التحميل..." : "Downloading...") : L.dlWorkflowBtn}
+              </Button>
+            </div>
+            </>
           )}
         </CardContent>
       </Card>
