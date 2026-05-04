@@ -91,6 +91,17 @@ Preferred communication style: Simple, everyday language (Arabic).
 
 A full Arabic code review and a phase-by-phase remediation log are at `docs/CODE_REVIEW.md` (security, TypeScript, performance, code quality, architecture).
 
+## تغييرات الإصدار الأخير (v2.0 — n8n HTTP API)
+
+- **الهيكل الجديد**: n8n يرسل بيانات الأعضاء عبر HTTP مباشرةً إلى سيرفر SCVA بدلاً من قراءة/كتابة ملفات من Disk.
+- **Endpoint جديد**: `POST /api/public/append-excel` — يستقبل بيانات العضو ويكتبها في ملف Excel المناسب (عربي أو إنجليزي). مؤمَّن بـ Bearer token (apiKey).
+- **Endpoint جديد**: `GET /api/admin/excel-download?lang=ar|en` — يحمّل ملف Excel المحدَّث (للمدراء فقط).
+- **مفتاح API**: يُولَّد تلقائياً عند أول تشغيل ويُخزَّن في `form_settings.api_key`. يُضمَّن في ملف Workflow عند تحميله.
+- **Workflow v2.0**: استُبدلت عقد Read/Write File بعقدة HTTP Request واحدة تستدعي `/api/public/append-excel`.
+- **صفحة الإعدادات**: تعرض مفتاح API (للنسخ) وأزرار تحميل ملفات Excel المحدَّثة مباشرةً من السيرفر.
+
+---
+
 ## External Member Registration Form (n8n Integration)
 
 A complete external registration form system allows prospective members to self-register without needing a system account.

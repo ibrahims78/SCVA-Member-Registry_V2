@@ -208,8 +208,11 @@ export default function Settings() {
   const [showCode, setShowCode] = useState(false);
   const [isSavingFormSettings, setIsSavingFormSettings] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [apiKeyCopied, setApiKeyCopied] = useState(false);
   const [isDownloadingWorkflow, setIsDownloadingWorkflow] = useState(false);
   const [formUrlCopied, setFormUrlCopied] = useState(false);
+  const [isDownloadingArExcel, setIsDownloadingArExcel] = useState(false);
+  const [isDownloadingEnExcel, setIsDownloadingEnExcel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -260,13 +263,40 @@ export default function Settings() {
     });
   };
 
+  const handleDownloadExcel = async (lang: "ar" | "en") => {
+    const setter = lang === "ar" ? setIsDownloadingArExcel : setIsDownloadingEnExcel;
+    setter(true);
+    try {
+      const res = await apiRequest("GET", `/api/admin/excel-download?lang=${lang}`);
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = lang === "ar" ? "نموذج-الأعضاء-عربي.xlsx" : "SCVA-Members-Template-EN.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({
+        title: isAr ? "تم التحميل" : "Downloaded",
+        description: isAr
+          ? `تم تحميل ملف Excel ${lang === "ar" ? "العربي" : "الإنجليزي"} بنجاح.`
+          : `${lang === "ar" ? "Arabic" : "English"} Excel file downloaded successfully.`,
+      });
+    } catch {
+      toast({ title: isAr ? "خطأ في التحميل" : "Download failed", variant: "destructive" });
+    } finally {
+      setter(false);
+    }
+  };
+
   const handleDownloadWorkflow = async () => {
     const email = formSettingsData?.notificationEmail ?? "";
-    const webhook = formSettingsData?.webhookUrl ?? "";
-    if (!email || !webhook) {
+    if (!email) {
       toast({
         title: L.dlWorkflowErr,
-        description: L.dlWorkflowNoSettings,
+        description: isAr
+          ? "يجب حفظ البريد الإلكتروني للإشعارات قبل تحميل ملف Workflow."
+          : "Please save the notification email before downloading the workflow.",
         variant: "destructive",
       });
       return;
@@ -1180,52 +1210,92 @@ export default function Settings() {
                 </p>
               </div>
 
-              {/* Excel Paths */}
-              <div className="rounded-md border border-border bg-muted/30 p-4 space-y-4">
+              {/* API Key */}
+              <div className="rounded-md border border-border bg-muted/30 p-4 space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <KeyRound className="h-3.5 w-3.5" />
+                  {isAr ? "مفتاح API — لـ n8n" : "API Key — for n8n"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? "يُستخدم هذا المفتاح من قِبَل n8n لكتابة بيانات الأعضاء مباشرةً في ملفات Excel على هذا السيرفر. يُضمَّن تلقائياً في ملف Workflow عند تحميله."
+                    : "This key is used by n8n to write member data directly to Excel files on this server. It is automatically embedded in the Workflow file when downloaded."}
+                </p>
+                <div className="flex gap-2">
+                  <code className="flex-1 rounded-md border bg-background px-3 py-2 text-sm font-mono truncate select-all" dir="ltr">
+                    {formSettingsData?.apiKey || "—"}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    title={isAr ? "نسخ المفتاح" : "Copy key"}
+                    onClick={() => {
+                      const key = formSettingsData?.apiKey ?? "";
+                      navigator.clipboard.writeText(key).then(() => {
+                        setApiKeyCopied(true);
+                        setTimeout(() => setApiKeyCopied(false), 2000);
+                      });
+                    }}
+                  >
+                    {apiKeyCopied ? (
+                      <ClipboardCheck className="h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <div className="rounded-md border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400">
+                  ✅{" "}
+                  {isAr
+                    ? "ملفات Excel محفوظة على هذا السيرفر — n8n يكتب فيها مباشرةً عبر HTTP دون الحاجة لنسخها."
+                    : "Excel files are stored on this server — n8n writes to them directly via HTTP with no need to copy them."}
+                </div>
+              </div>
+
+              {/* Excel Files Download */}
+              <div className="rounded-md border border-border bg-muted/30 p-4 space-y-3">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                   <FileSpreadsheet className="h-3.5 w-3.5" />
-                  {isAr ? "مسارات ملفات Excel على سيرفر n8n" : "Excel file paths on the n8n server"}
+                  {isAr ? "تحميل ملفات Excel المحدَّثة" : "Download updated Excel files"}
                 </p>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    {isAr ? "مسار ملف Excel العربي" : "Arabic Excel file path"}
-                  </Label>
-                  <Input
-                    {...formSettingsForm.register("arExcelPath")}
-                    dir="ltr"
-                    className="font-mono text-sm"
-                    placeholder={isAr ? "/data/نموذج-الأعضاء-عربي.xlsx" : "/data/نموذج-الأعضاء-عربي.xlsx"}
-                    data-testid="input-ar-excel-path"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {isAr
-                      ? "المسار الكامل لملف الإكسل العربي على سيرفر n8n (مثال: /data/نموذج-الأعضاء-عربي.xlsx)"
-                      : "Full path to the Arabic Excel file on the n8n server (e.g. /data/نموذج-الأعضاء-عربي.xlsx)"}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    {isAr ? "مسار ملف Excel الإنجليزي" : "English Excel file path"}
-                  </Label>
-                  <Input
-                    {...formSettingsForm.register("enExcelPath")}
-                    dir="ltr"
-                    className="font-mono text-sm"
-                    placeholder="/data/SCVA-Members-Template-EN.xlsx"
-                    data-testid="input-en-excel-path"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {isAr
-                      ? "المسار الكامل لملف الإكسل الإنجليزي على سيرفر n8n (مثال: /data/SCVA-Members-Template-EN.xlsx)"
-                      : "Full path to the English Excel file on the n8n server (e.g. /data/SCVA-Members-Template-EN.xlsx)"}
-                  </p>
-                </div>
-                <p className="text-xs text-amber-600 dark:text-amber-400">
-                  ⚠️{" "}
+                <p className="text-xs text-muted-foreground">
                   {isAr
-                    ? "يُدمَج هذا المسار تلقائياً في ملف Workflow عند تحميله. ضع ملفات Excel في نفس المسار على سيرفر n8n."
-                    : "This path is automatically embedded in the Workflow file when downloaded. Place the Excel files at the same path on the n8n server."}
+                    ? "حمّل ملفات Excel بعد اكتمال تسجيلات الأعضاء لمراجعة البيانات."
+                    : "Download the Excel files after member registrations are complete to review the data."}
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => handleDownloadExcel("ar")}
+                    disabled={isDownloadingArExcel}
+                  >
+                    {isDownloadingArExcel ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    {isAr ? "تحميل ملف Excel العربي" : "Download Arabic Excel"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => handleDownloadExcel("en")}
+                    disabled={isDownloadingEnExcel}
+                  >
+                    {isDownloadingEnExcel ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    {isAr ? "تحميل ملف Excel الإنجليزي" : "Download English Excel"}
+                  </Button>
+                </div>
               </div>
 
               <Button
@@ -1299,10 +1369,14 @@ export default function Settings() {
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">{L.dlWorkflowD}</p>
               </div>
-              {(!formSettingsData?.notificationEmail || !formSettingsData?.webhookUrl) && (
+              {!formSettingsData?.notificationEmail && (
                 <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 px-3 py-2 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
                   <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-                  <span>{L.dlWorkflowNoSettings}</span>
+                  <span>
+                    {isAr
+                      ? "يجب حفظ البريد الإلكتروني للإشعارات أولاً."
+                      : "Please save the notification email first."}
+                  </span>
                 </div>
               )}
               <Button
@@ -1310,7 +1384,7 @@ export default function Settings() {
                 variant="outline"
                 className="gap-2"
                 onClick={handleDownloadWorkflow}
-                disabled={isDownloadingWorkflow || !formSettingsData?.notificationEmail || !formSettingsData?.webhookUrl}
+                disabled={isDownloadingWorkflow || !formSettingsData?.notificationEmail}
                 data-testid="button-download-workflow"
               >
                 {isDownloadingWorkflow ? (

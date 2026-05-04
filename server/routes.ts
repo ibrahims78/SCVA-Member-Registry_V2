@@ -850,20 +850,21 @@ export async function registerRoutes(
           }
         }
 
-        // 4. Excel read nodes — inject file paths
-        if (node.id === "read-ar-excel" && node.parameters && settings.arExcelPath) {
-          node.parameters.fileSelector = settings.arExcelPath;
-        }
-        if (node.id === "read-en-excel" && node.parameters && settings.enExcelPath) {
-          node.parameters.fileSelector = settings.enExcelPath;
-        }
-
-        // 5. Excel append nodes — inject file paths
-        if (node.id === "append-ar-row" && node.parameters && settings.arExcelPath) {
-          node.parameters.filePath = settings.arExcelPath;
-        }
-        if (node.id === "append-en-row" && node.parameters && settings.enExcelPath) {
-          node.parameters.filePath = settings.enExcelPath;
+        // 4. HTTP append node — inject app URL and API key
+        if (node.id === "append-excel-http" && node.parameters) {
+          const appUrl = process.env.REPLIT_DEV_DOMAIN
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+            : "";
+          if (appUrl) {
+            node.parameters.url = `${appUrl}/api/public/append-excel`;
+          }
+          if (node.parameters.headerParameters?.parameters) {
+            for (const h of node.parameters.headerParameters.parameters) {
+              if (h.name === "Authorization") {
+                h.value = `Bearer ${settings.apiKey}`;
+              }
+            }
+          }
         }
       }
 
@@ -872,8 +873,10 @@ export async function registerRoutes(
         workflow.__meta.injectedSettings = {
           adminEmail: adminEmail || "(not set)",
           verificationCode: verificationCode,
-          arExcelPath: settings.arExcelPath || "(not set — using $vars.SCVA_AR_EXCEL_PATH)",
-          enExcelPath: settings.enExcelPath || "(not set — using $vars.SCVA_EN_EXCEL_PATH)",
+          apiKey: settings.apiKey ? "✅ مُضمَّن" : "(not set)",
+          appUrl: process.env.REPLIT_DEV_DOMAIN
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+            : "(not set)",
           note: "Only SMTP credentials need to be set manually in n8n.",
         };
       }
@@ -918,6 +921,121 @@ export async function registerRoutes(
       const settings = await storage.getFormSettings();
       const valid = code === settings.verificationCode;
       res.json({ valid });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // ---------- Public: append member row to Excel file (called by n8n) ----------
+  // Authentication: Bearer token = apiKey from form settings
+  app.post("/api/public/append-excel", async (req, res, next) => {
+    try {
+      const authHeader = req.headers.authorization ?? "";
+      const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+      const settings = await storage.getFormSettings();
+
+      if (!token || token !== settings.apiKey) {
+        return res.status(401).json({ success: false, message: "Unauthorized: invalid API key" });
+      }
+
+      const data = req.body as Record<string, unknown>;
+      const lang = String(data.language ?? "ar") === "en" ? "en" : "ar";
+
+      const XLSX = await import("xlsx");
+      const fsModule = await import("fs");
+      const pathModule = await import("path");
+
+      const excelDir = pathModule.resolve(process.cwd(), "docs/form_by_n8n");
+      const fileName = lang === "ar" ? "نموذج-الأعضاء-عربي.xlsx" : "SCVA-Members-Template-EN.xlsx";
+      const filePath = pathModule.join(excelDir, fileName);
+
+      let wb: ReturnType<typeof XLSX.default.read>;
+      let ws: ReturnType<typeof XLSX.default.utils.aoa_to_sheet>;
+      let sheetName: string;
+
+      if (fsModule.default.existsSync(filePath)) {
+        const buf = fsModule.default.readFileSync(filePath);
+        wb = XLSX.default.read(buf, { type: "buffer" });
+        sheetName = wb.SheetNames[0];
+        ws = wb.Sheets[sheetName];
+      } else {
+        wb = XLSX.default.utils.book_new();
+        ws = XLSX.default.utils.aoa_to_sheet([]);
+        sheetName = lang === "ar" ? "الأعضاء" : "Members";
+        XLSX.default.utils.book_append_sheet(wb, ws, sheetName);
+      }
+
+      const clean = (v: unknown) => (v != null ? String(v).trim() : "");
+
+      let newRow: Record<string, unknown>;
+      if (lang === "ar") {
+        newRow = {
+          "الاسم الأول":            clean(data.firstName),
+          "الكنية":                  clean(data.lastName),
+          "الاسم بالعربية":         clean(data.fullName),
+          "اسم الأب":               clean(data.fatherName),
+          "الاسم بالإنجليزية":      clean(data.englishName),
+          "تاريخ الميلاد":          clean(data.birthDate),
+          "الجنس":                   clean(data.gender),
+          "التخصص":                  clean(data.specialty),
+          "البريد الإلكتروني":      clean(data.email),
+          "رقم الهاتف":             clean(data.phone),
+          "المدينة":                 clean(data.city),
+          "عنوان العمل":            clean(data.workAddress),
+          "تاريخ الانضمام":         clean(data.joinDate),
+          "نوع العضوية":            clean(data.membershipType),
+          "معرّف الجمعية الأوروبية": clean(data.escId),
+          "تاريخ التسجيل":          clean(data.submittedAt ?? new Date().toISOString()),
+        };
+      } else {
+        newRow = {
+          "First name":          clean(data.firstName),
+          "Last name":           clean(data.lastName),
+          "Full name (Arabic)":  clean(data.fullName),
+          "Father's name":       clean(data.fatherName),
+          "Full name (English)": clean(data.englishName),
+          "Date of birth":       clean(data.birthDate),
+          "Gender":              clean(data.genderRaw ?? data.gender),
+          "Specialty":           clean(data.specialtyRaw ?? data.specialty),
+          "Email":               clean(data.email),
+          "Phone":               clean(data.phone),
+          "City":                clean(data.city),
+          "Work address":        clean(data.workAddress),
+          "Join date":           clean(data.joinDate),
+          "Membership type":     clean(data.membershipTypeRaw ?? data.membershipType),
+          "ESC ID":              clean(data.escId),
+          "Submitted at":        clean(data.submittedAt ?? new Date().toISOString()),
+        };
+      }
+
+      XLSX.default.utils.sheet_add_json(ws, [newRow], { skipHeader: false, origin: -1 });
+      const outBuf = XLSX.default.write(wb, { type: "buffer", bookType: "xlsx" });
+      fsModule.default.writeFileSync(filePath, outBuf);
+
+      console.log(`[EXCEL] أُضيف صف جديد إلى ${fileName}`);
+      res.json({ success: true, message: "تمت إضافة البيانات إلى ملف الإكسل بنجاح", file: fileName });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // ---------- Admin: download current Excel file ----------
+  app.get("/api/admin/excel-download", requireAdmin, async (req, res, next) => {
+    try {
+      const lang = req.query.lang === "en" ? "en" : "ar";
+      const pathModule = await import("path");
+      const fsModule = await import("fs");
+
+      const fileName = lang === "ar" ? "نموذج-الأعضاء-عربي.xlsx" : "SCVA-Members-Template-EN.xlsx";
+      const filePath = pathModule.resolve(process.cwd(), "docs/form_by_n8n", fileName);
+
+      if (!fsModule.default.existsSync(filePath)) {
+        return res.status(404).json({ message: "الملف غير موجود" });
+      }
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileName)}"`);
+      fsModule.default.createReadStream(filePath).pipe(res);
     } catch (err) {
       next(err);
     }

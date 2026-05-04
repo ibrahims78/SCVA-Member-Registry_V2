@@ -263,10 +263,22 @@ export class DatabaseStorage implements IStorage {
 
   async getFormSettings(): Promise<FormSettings> {
     const [row] = await db.select().from(formSettings).where(eq(formSettings.id, "singleton"));
-    if (row) return row;
+    if (row) {
+      if (!row.apiKey) {
+        const newKey = randomBytes(24).toString("hex");
+        const [updated] = await db
+          .update(formSettings)
+          .set({ apiKey: newKey })
+          .where(eq(formSettings.id, "singleton"))
+          .returning();
+        return updated;
+      }
+      return row;
+    }
+    const newKey = randomBytes(24).toString("hex");
     const [created] = await db
       .insert(formSettings)
-      .values({ id: "singleton" })
+      .values({ id: "singleton", apiKey: newKey })
       .returning();
     return created;
   }

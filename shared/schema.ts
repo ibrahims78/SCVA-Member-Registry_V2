@@ -47,6 +47,7 @@ export const formSettings = pgTable("form_settings", {
   codeUpdatedAt: timestamp("code_updated_at").notNull().default(sql`now()`),
   arExcelPath: text("ar_excel_path").notNull().default(""),
   enExcelPath: text("en_excel_path").notNull().default(""),
+  apiKey: text("api_key").notNull().default(""),
 });
 
 export const genderEnum = z.enum(["male", "female"]);
