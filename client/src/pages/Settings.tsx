@@ -164,7 +164,7 @@ export default function Settings() {
     exporting:    isAr ? "جارٍ التصدير..." : "Exporting...",
     // Workflow download
     dlWorkflow:       isAr ? "تحميل ملف Workflow لـ n8n" : "Download n8n Workflow",
-    dlWorkflowD:      isAr ? "حمّل ملف الـ Workflow الجاهز لاستيراده في n8n مع بريد الإشعارات مُدمَج تلقائياً." : "Download the ready-to-import n8n workflow file with the notification email pre-filled.",
+    dlWorkflowD:      isAr ? "حمّل ملف الـ Workflow الجاهز — رمز التحقق والبريد ومسارات ملفات Excel كلها مُدمجة تلقائياً." : "Download the ready-to-import workflow file — verification code, email, and Excel paths are all pre-filled automatically.",
     dlWorkflowBtn:    isAr ? "تحميل Workflow" : "Download Workflow",
     dlWorkflowOk:     isAr ? "تم تحميل ملف Workflow" : "Workflow downloaded",
     dlWorkflowOkD:    isAr ? "استورد الملف في n8n عبر: Settings › Import Workflow." : "Import the file in n8n via: Settings › Import Workflow.",
@@ -223,17 +223,19 @@ export default function Settings() {
 
   const formSettingsForm = useForm({
     resolver: zodResolver(insertFormSettingsSchema),
-    defaultValues: { notificationEmail: "", webhookUrl: "", verificationCode: "SCVA-2026" },
+    defaultValues: { notificationEmail: "", webhookUrl: "", verificationCode: "SCVA-2026", arExcelPath: "", enExcelPath: "" },
     values: formSettingsData
       ? {
           notificationEmail: formSettingsData.notificationEmail ?? "",
           webhookUrl: formSettingsData.webhookUrl ?? "",
           verificationCode: formSettingsData.verificationCode ?? "SCVA-2026",
+          arExcelPath: formSettingsData.arExcelPath ?? "",
+          enExcelPath: formSettingsData.enExcelPath ?? "",
         }
       : undefined,
   });
 
-  const handleSaveFormSettings = async (data: { notificationEmail?: string; webhookUrl?: string; verificationCode?: string }) => {
+  const handleSaveFormSettings = async (data: { notificationEmail?: string; webhookUrl?: string; verificationCode?: string; arExcelPath?: string; enExcelPath?: string }) => {
     setIsSavingFormSettings(true);
     try {
       const res = await apiRequest("PUT", "/api/form-settings", data);
@@ -1175,6 +1177,54 @@ export default function Settings() {
                   {isAr
                     ? "انسخ رابط Webhook من عقدة Webhook في n8n والصقه هنا."
                     : "Copy the Webhook URL from the Webhook node in n8n and paste it here."}
+                </p>
+              </div>
+
+              {/* Excel Paths */}
+              <div className="rounded-md border border-border bg-muted/30 p-4 space-y-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  {isAr ? "مسارات ملفات Excel على سيرفر n8n" : "Excel file paths on the n8n server"}
+                </p>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    {isAr ? "مسار ملف Excel العربي" : "Arabic Excel file path"}
+                  </Label>
+                  <Input
+                    {...formSettingsForm.register("arExcelPath")}
+                    dir="ltr"
+                    className="font-mono text-sm"
+                    placeholder={isAr ? "/data/نموذج-الأعضاء-عربي.xlsx" : "/data/نموذج-الأعضاء-عربي.xlsx"}
+                    data-testid="input-ar-excel-path"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {isAr
+                      ? "المسار الكامل لملف الإكسل العربي على سيرفر n8n (مثال: /data/نموذج-الأعضاء-عربي.xlsx)"
+                      : "Full path to the Arabic Excel file on the n8n server (e.g. /data/نموذج-الأعضاء-عربي.xlsx)"}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    {isAr ? "مسار ملف Excel الإنجليزي" : "English Excel file path"}
+                  </Label>
+                  <Input
+                    {...formSettingsForm.register("enExcelPath")}
+                    dir="ltr"
+                    className="font-mono text-sm"
+                    placeholder="/data/SCVA-Members-Template-EN.xlsx"
+                    data-testid="input-en-excel-path"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {isAr
+                      ? "المسار الكامل لملف الإكسل الإنجليزي على سيرفر n8n (مثال: /data/SCVA-Members-Template-EN.xlsx)"
+                      : "Full path to the English Excel file on the n8n server (e.g. /data/SCVA-Members-Template-EN.xlsx)"}
+                  </p>
+                </div>
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  ⚠️{" "}
+                  {isAr
+                    ? "يُدمَج هذا المسار تلقائياً في ملف Workflow عند تحميله. ضع ملفات Excel في نفس المسار على سيرفر n8n."
+                    : "This path is automatically embedded in the Workflow file when downloaded. Place the Excel files at the same path on the n8n server."}
                 </p>
               </div>
 

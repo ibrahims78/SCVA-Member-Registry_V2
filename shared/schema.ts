@@ -45,6 +45,8 @@ export const formSettings = pgTable("form_settings", {
   webhookUrl: text("webhook_url").notNull().default(""),
   verificationCode: text("verification_code").notNull().default("SCVA-2026"),
   codeUpdatedAt: timestamp("code_updated_at").notNull().default(sql`now()`),
+  arExcelPath: text("ar_excel_path").notNull().default(""),
+  enExcelPath: text("en_excel_path").notNull().default(""),
 });
 
 export const genderEnum = z.enum(["male", "female"]);
@@ -109,6 +111,8 @@ export const insertFormSettingsSchema = z.object({
   notificationEmail: z.string().email("بريد إلكتروني غير صالح").or(z.literal("")).optional(),
   webhookUrl: z.string().url("رابط Webhook غير صالح").or(z.literal("")).optional(),
   verificationCode: z.string().min(4, "رمز الدعوة يجب أن يكون 4 أحرف على الأقل").optional(),
+  arExcelPath: z.string().optional(),
+  enExcelPath: z.string().optional(),
 });
 
 export type FormSettings = typeof formSettings.$inferSelect;
