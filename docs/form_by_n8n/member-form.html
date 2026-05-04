@@ -1279,9 +1279,13 @@ async function submitForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!res.ok && res.status !== 200) {
-      const errBody = await res.json().catch(() => ({}));
-      if (errBody.code === 'INVALID_VERIFICATION_CODE') {
+
+    // Always parse the response body first
+    const resBody = await res.json().catch(() => ({}));
+
+    // Check for explicit error — n8n may return 200 with status:'error' body
+    if (!res.ok || resBody.status === 'error') {
+      if (resBody.code === 'INVALID_VERIFICATION_CODE') {
         showErr('err-submit', L.codeError);
         isSubmitting = false;
         setSpinner('spinner-submit', false);
@@ -1289,13 +1293,24 @@ async function submitForm() {
         document.getElementById('btn-submit-txt').textContent = L.btnSubmit;
         return;
       }
-      throw new Error('Server error: ' + res.status);
+      const errMsg = (currentLang === 'ar' ? resBody.message_ar : resBody.message_en)
+        || resBody.message
+        || L.submitError;
+      throw new Error(errMsg);
     }
-    // Success
+
+    // Only show success when workflow explicitly confirms status:'success'
+    if (resBody.status !== 'success') {
+      throw new Error(currentLang === 'ar'
+        ? 'لم يتم تأكيد حفظ البيانات. يُرجى المحاولة مرة أخرى.'
+        : 'Data could not be confirmed. Please try again.');
+    }
+
+    // Confirmed success
     clearSaved(true);
     showSuccess(data);
   } catch (err) {
-    showErr('err-submit', L.submitError);
+    showErr('err-submit', err.message || L.submitError);
     isSubmitting = false;
     setSpinner('spinner-submit', false);
     document.getElementById('btn-submit').disabled = false;
