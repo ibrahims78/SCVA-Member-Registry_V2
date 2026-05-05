@@ -14,7 +14,10 @@
       "name": "Webhook — Receive Registration",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "scva-member-register"
     },
     {
@@ -25,7 +28,10 @@
       "name": "Verify Invitation Code",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -35,7 +41,10 @@
       "name": "Format & Validate Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -72,38 +81,46 @@
       "name": "Append to SCVA Excel (HTTP)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
         "fromEmail": "={{ $vars.SMTP_FROM || 'noreply@scva.org' }}",
         "toEmail": "={{ $vars.SCVA_ADMIN_EMAIL || 'admin@scva.org' }}",
-        "subject": "=\uD83D\uDD14 عضو جديد: {{ $('Format & Validate Data').first().json.fullName || $('Format & Validate Data').first().json.englishName }} | الرابطة السورية لأمراض وجراحة القلب",
+        "subject": "={{ $('Build Email HTML').first().json.adminSubject }}",
         "emailType": "html",
-        "message": "=<!DOCTYPE html>\n<html dir=\"rtl\" lang=\"ar\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<style>\n  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1a202c; direction: rtl; }\n  .card { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }\n  .hdr { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); color: #ffffff; padding: 32px; text-align: center; }\n  .hdr-icon { font-size: 38px; margin-bottom: 10px; }\n  .hdr h1 { margin: 0 0 6px; font-size: 18px; font-weight: 700; }\n  .hdr p  { margin: 0; font-size: 12px; opacity: 0.78; }\n  .badge { display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; margin-top: 10px; }\n  .body { padding: 28px 32px; }\n  .alert-new { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; margin-bottom: 22px; font-size: 13px; color: #166534; }\n  .sec { margin-bottom: 22px; }\n  .sec-title { font-size: 11px; font-weight: 700; color: #06b6d4; letter-spacing: 0.6px; text-transform: uppercase; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 10px; }\n  table { width: 100%; border-collapse: collapse; }\n  tr:nth-child(even) td { background: #f8fafc; }\n  td { padding: 8px 10px; font-size: 13px; vertical-align: top; border-bottom: 1px solid #f1f5f9; }\n  td.lbl { width: 36%; color: #64748b; font-weight: 600; white-space: nowrap; }\n  td.val { color: #1e293b; font-weight: 500; }\n  .ftr { background: #f8fafc; padding: 18px 32px; text-align: center; border-top: 1px solid #e2e8f0; }\n  .ftr-org { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }\n  .ftr-sub { font-size: 11px; color: #94a3b8; }\n</style>\n</head>\n<body>\n<div class=\"card\">\n  <div class=\"hdr\">\n    <div class=\"hdr-icon\">\uD83D\uDD14</div>\n    <h1>إشعار تسجيل عضو جديد</h1>\n    <p>الرابطة السورية لأمراض وجراحة القلب</p>\n    <span class=\"badge\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'نموذج عربي' : 'English Form' }}</span>\n  </div>\n  <div class=\"body\">\n    <div class=\"alert-new\">\u2705 تم استلام طلب عضوية جديد بنجاح عبر النموذج الإلكتروني.</div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">البيانات الشخصية</div>\n      <table>\n        <tr><td class=\"lbl\">الاسم الأول</td><td class=\"val\">{{ $('Format & Validate Data').first().json.firstName }}</td></tr>\n        <tr><td class=\"lbl\">الكنية</td><td class=\"val\">{{ $('Format & Validate Data').first().json.lastName }}</td></tr>\n        <tr><td class=\"lbl\">الاسم الكامل (عربي)</td><td class=\"val\">{{ $('Format & Validate Data').first().json.fullName }}</td></tr>\n        <tr><td class=\"lbl\">الاسم الكامل (إنجليزي)</td><td class=\"val\">{{ $('Format & Validate Data').first().json.englishName }}</td></tr>\n        <tr><td class=\"lbl\">اسم الأب</td><td class=\"val\">{{ $('Format & Validate Data').first().json.fatherName || '—' }}</td></tr>\n        <tr><td class=\"lbl\">تاريخ الميلاد</td><td class=\"val\">{{ $('Format & Validate Data').first().json.birthDate || '—' }}</td></tr>\n        <tr><td class=\"lbl\">الجنس</td><td class=\"val\">{{ $('Format & Validate Data').first().json.gender || '—' }}</td></tr>\n      </table>\n    </div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">البيانات المهنية</div>\n      <table>\n        <tr><td class=\"lbl\">التخصص</td><td class=\"val\">{{ $('Format & Validate Data').first().json.specialty || '—' }}</td></tr>\n        <tr><td class=\"lbl\">نوع العضوية</td><td class=\"val\">{{ $('Format & Validate Data').first().json.membershipType || '—' }}</td></tr>\n        <tr><td class=\"lbl\">تاريخ الانضمام</td><td class=\"val\">{{ $('Format & Validate Data').first().json.joinDate || '—' }}</td></tr>\n        <tr><td class=\"lbl\">ESC ID</td><td class=\"val\">{{ $('Format & Validate Data').first().json.escId || '—' }}</td></tr>\n      </table>\n    </div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">بيانات التواصل</div>\n      <table>\n        <tr><td class=\"lbl\">البريد الإلكتروني</td><td class=\"val\">{{ $('Format & Validate Data').first().json.email || '—' }}</td></tr>\n        <tr><td class=\"lbl\">رقم الهاتف</td><td class=\"val\">{{ $('Format & Validate Data').first().json.phone || '—' }}</td></tr>\n        <tr><td class=\"lbl\">المدينة</td><td class=\"val\">{{ $('Format & Validate Data').first().json.city || '—' }}</td></tr>\n        <tr><td class=\"lbl\">عنوان العمل</td><td class=\"val\">{{ $('Format & Validate Data').first().json.workAddress || '—' }}</td></tr>\n      </table>\n    </div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">معلومات الطلب</div>\n      <table>\n        <tr><td class=\"lbl\">لغة النموذج</td><td class=\"val\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'العربية' : 'الإنجليزية' }}</td></tr>\n        <tr><td class=\"lbl\">وقت الإرسال</td><td class=\"val\">{{ new Date($('Format & Validate Data').first().json.submittedAt).toLocaleString('ar-SY') }}</td></tr>\n      </table>\n    </div>\n  </div>\n  <div class=\"ftr\">\n    <div class=\"ftr-org\">الرابطة السورية لأمراض وجراحة القلب</div>\n    <div class=\"ftr-sub\">Syrian Cardiovascular Association — SCVA</div>\n  </div>\n</div>\n</body>\n</html>",
-        "options": {"appendAttribution": false}
+        "message": "={{ $('Build Email HTML').first().json.adminHtml }}",
+        "options": {
+          "appendAttribution": false
+        }
       },
       "id": "email-admin",
       "name": "Email Admin — Notification",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [1120, 300]
+      "position": [
+        1340,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": false,
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "conditions": [
             {
-              "id": "email-check",
-              "leftValue": "={{ $('Format & Validate Data').first().json.email }}",
+              "id": "has-email",
+              "leftValue": "={{ $('Build Email HTML').first().json.memberEmail }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "notEquals"
+                "operation": "notEmpty"
               }
             }
           ],
@@ -115,22 +132,30 @@
       "name": "Member has email?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1340, 300]
+      "position": [
+        1560,
+        300
+      ]
     },
     {
       "parameters": {
         "fromEmail": "={{ $vars.SMTP_FROM || 'noreply@scva.org' }}",
-        "toEmail": "={{ $('Format & Validate Data').first().json.email }}",
-        "subject": "={{ $('Format & Validate Data').first().json.language === 'ar' ? '\u2705 تم استلام طلب انضمامك | الرابطة السورية لأمراض وجراحة القلب' : '\u2705 Your Membership Application Received | Syrian Cardiovascular Association (SCVA)' }}",
+        "toEmail": "={{ $('Build Email HTML').first().json.memberEmail }}",
+        "subject": "={{ $('Build Email HTML').first().json.memberSubject }}",
         "emailType": "html",
-        "message": "=<!DOCTYPE html>\n<html dir=\"{{ $('Format & Validate Data').first().json.language === 'ar' ? 'rtl' : 'ltr' }}\" lang=\"{{ $('Format & Validate Data').first().json.language }}\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<style>\n  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1a202c; }\n  .card { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }\n  .hdr { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); color: #ffffff; padding: 32px; text-align: center; }\n  .hdr-icon { font-size: 38px; margin-bottom: 10px; }\n  .hdr h1 { margin: 0 0 6px; font-size: 18px; font-weight: 700; }\n  .hdr p  { margin: 0; font-size: 12px; opacity: 0.78; }\n  .body { padding: 28px 32px; }\n  .greeting { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: #0f172a; }\n  .msg { font-size: 13px; line-height: 1.85; color: #475569; margin-bottom: 24px; }\n  .sec { margin-bottom: 22px; }\n  .sec-title { font-size: 11px; font-weight: 700; color: #06b6d4; letter-spacing: 0.6px; text-transform: uppercase; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 10px; }\n  table { width: 100%; border-collapse: collapse; }\n  tr:nth-child(even) td { background: #f8fafc; }\n  td { padding: 8px 10px; font-size: 13px; vertical-align: top; border-bottom: 1px solid #f1f5f9; }\n  td.lbl { width: 40%; color: #64748b; font-weight: 600; }\n  td.val { color: #1e293b; font-weight: 500; }\n  .steps { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px 20px; margin-bottom: 22px; }\n  .steps h4 { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #1d4ed8; }\n  .steps ol { margin: 0; padding-inline-start: 20px; }\n  .steps li { font-size: 13px; color: #374151; margin-bottom: 6px; line-height: 1.6; }\n  .ftr { background: #f8fafc; padding: 18px 32px; text-align: center; border-top: 1px solid #e2e8f0; }\n  .ftr-org { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }\n  .ftr-sub { font-size: 11px; color: #94a3b8; }\n</style>\n</head>\n<body>\n<div class=\"card\">\n  <div class=\"hdr\">\n    <div class=\"hdr-icon\">\u2705</div>\n    <h1>{{ $('Format & Validate Data').first().json.language === 'ar' ? 'تم استلام طلب العضوية' : 'Membership Application Received' }}</h1>\n    <p>{{ $('Format & Validate Data').first().json.language === 'ar' ? 'الرابطة السورية لأمراض وجراحة القلب' : 'Syrian Cardiovascular Association — SCVA' }}</p>\n  </div>\n  <div class=\"body\">\n    <div class=\"greeting\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'عزيزي/عزيزتي ' + $('Format & Validate Data').first().json.fullName : 'Dear ' + $('Format & Validate Data').first().json.englishName }},</div>\n    <div class=\"msg\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'يسعدنا إخبارك بأنه تم استلام طلب انضمامك إلى الرابطة السورية لأمراض وجراحة القلب بنجاح. سيقوم فريقنا المختص بمراجعة طلبك والتواصل معك قريباً لإتمام إجراءات القبول.' : 'We are pleased to inform you that your membership application to the Syrian Cardiovascular Association (SCVA) has been successfully received. Our team will review your application and contact you shortly to complete the membership process.' }}</div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'ملخص بياناتك المُرسَلة' : 'Your Submitted Information' }}</div>\n      <table>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'الاسم الكامل (عربي)' : 'Full Name (Arabic)' }}</td><td class=\"val\">{{ $('Format & Validate Data').first().json.fullName }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'الاسم الكامل (إنجليزي)' : 'Full Name (English)' }}</td><td class=\"val\">{{ $('Format & Validate Data').first().json.englishName }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'التخصص' : 'Specialty' }}</td><td class=\"val\">{{ $('Format & Validate Data').first().json.specialty || '—' }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'نوع العضوية' : 'Membership Type' }}</td><td class=\"val\">{{ $('Format & Validate Data').first().json.membershipType || '—' }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</td><td class=\"val\">{{ $('Format & Validate Data').first().json.email }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'رقم الهاتف' : 'Phone' }}</td><td class=\"val\">{{ $('Format & Validate Data').first().json.phone || '—' }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'المدينة' : 'City' }}</td><td class=\"val\">{{ $('Format & Validate Data').first().json.city || '—' }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').first().json.language === 'ar' ? 'تاريخ الإرسال' : 'Submission Date' }}</td><td class=\"val\">{{ new Date($('Format & Validate Data').first().json.submittedAt).toLocaleDateString($('Format & Validate Data').first().json.language === 'ar' ? 'ar-SY' : 'en-GB') }}</td></tr>\n      </table>\n    </div>\n\n    <div class=\"steps\">\n      <h4>{{ $('Format & Validate Data').first().json.language === 'ar' ? '\uD83D\uDCCB الخطوات التالية' : '\uD83D\uDCCB Next Steps' }}</h4>\n      <ol>\n        <li>{{ $('Format & Validate Data').first().json.language === 'ar' ? 'ستتلقى اتصالاً من إدارة الرابطة لتأكيد قبولك.' : 'You will be contacted by the SCVA administration to confirm your acceptance.' }}</li>\n        <li>{{ $('Format & Validate Data').first().json.language === 'ar' ? 'قد يُطلب منك استكمال بعض الوثائق المطلوبة.' : 'You may be asked to provide additional required documents.' }}</li>\n        <li>{{ $('Format & Validate Data').first().json.language === 'ar' ? 'بعد الموافقة ستصلك بطاقة العضوية الرسمية.' : 'Upon approval, your official membership card will be issued.' }}</li>\n      </ol>\n    </div>\n  </div>\n  <div class=\"ftr\">\n    <div class=\"ftr-org\">الرابطة السورية لأمراض وجراحة القلب</div>\n    <div class=\"ftr-sub\">Syrian Cardiovascular Association — SCVA</div>\n  </div>\n</div>\n</body>\n</html>",
-        "options": {"appendAttribution": false}
+        "message": "={{ $('Build Email HTML').first().json.memberHtml }}",
+        "options": {
+          "appendAttribution": false
+        }
       },
       "id": "email-member",
       "name": "Email Member — Confirmation",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [1560, 180]
+      "position": [
+        1780,
+        180
+      ]
     },
     {
       "parameters": {
@@ -144,7 +169,10 @@
       "name": "Respond — 200 Success",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1560, 420]
+      "position": [
+        1780,
+        420
+      ]
     },
     {
       "parameters": {
@@ -158,7 +186,10 @@
       "name": "Respond — Error",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [460, 500]
+      "position": [
+        460,
+        500
+      ]
     },
     {
       "parameters": {
@@ -186,7 +217,10 @@
       "name": "Is Duplicate?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1120, 480]
+      "position": [
+        1120,
+        480
+      ]
     },
     {
       "parameters": {
@@ -200,50 +234,137 @@
       "name": "Respond — Duplicate",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1340, 620]
+      "position": [
+        1340,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $('Format & Validate Data').first().json;\nconst v = (val) => (val && String(val).trim()) ? String(val).trim() : '—';\nconst isAr = d.language !== 'en';\n\n// ── Admin Email (Arabic) ───────────────────────────────────────────────\nconst adminHtml = '<!DOCTYPE html>' +\n  '<html dir=\"rtl\" lang=\"ar\"><head><meta charset=\"UTF-8\">' +\n  '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">' +\n  '<style>' +\n  'body{font-family:Segoe UI,Arial,sans-serif;background:#f0f4f8;margin:0;padding:20px;color:#1a202c;direction:rtl}' +\n  '.card{max-width:620px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10)}' +\n  '.hdr{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:#fff;padding:32px;text-align:center}' +\n  '.hdr h1{margin:0 0 6px;font-size:18px;font-weight:700}.hdr p{margin:0;font-size:12px;opacity:.78}' +\n  '.badge{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 14px;font-size:11px;margin-top:10px}' +\n  '.body{padding:28px 32px}' +\n  '.alert-new{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:22px;font-size:13px;color:#166534}' +\n  '.sec{margin-bottom:22px}' +\n  '.sec-title{font-size:11px;font-weight:700;color:#06b6d4;letter-spacing:.6px;text-transform:uppercase;border-bottom:1.5px solid #e2e8f0;padding-bottom:5px;margin-bottom:10px}' +\n  'table{width:100%;border-collapse:collapse}tr:nth-child(even) td{background:#f8fafc}' +\n  'td{padding:8px 10px;font-size:13px;vertical-align:top;border-bottom:1px solid #f1f5f9}' +\n  'td.lbl{width:36%;color:#64748b;font-weight:600;white-space:nowrap}td.val{color:#1e293b;font-weight:500}' +\n  '.ftr{background:#f8fafc;padding:18px 32px;text-align:center;border-top:1px solid #e2e8f0}' +\n  '.ftr-org{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:3px}.ftr-sub{font-size:11px;color:#94a3b8}' +\n  '</style></head><body><div class=\"card\">' +\n  '<div class=\"hdr\"><div style=\"font-size:38px;margin-bottom:10px\">🔔</div>' +\n  '<h1>إشعار تسجيل عضو جديد</h1>' +\n  '<p>الرابطة السورية لأمراض وجراحة القلب</p>' +\n  '<span class=\"badge\">' + (isAr ? 'نموذج عربي' : 'English Form') + '</span></div>' +\n  '<div class=\"body\">' +\n  '<div class=\"alert-new\">✅ تم استلام طلب عضوية جديد بنجاح عبر النموذج الإلكتروني.</div>' +\n  '<div class=\"sec\"><div class=\"sec-title\">البيانات الشخصية</div><table>' +\n  '<tr><td class=\"lbl\">الاسم الأول</td><td class=\"val\">' + v(d.firstName) + '</td></tr>' +\n  '<tr><td class=\"lbl\">الكنية</td><td class=\"val\">' + v(d.lastName) + '</td></tr>' +\n  '<tr><td class=\"lbl\">الاسم الكامل (عربي)</td><td class=\"val\">' + v(d.fullName) + '</td></tr>' +\n  '<tr><td class=\"lbl\">الاسم الكامل (إنجليزي)</td><td class=\"val\">' + v(d.englishName) + '</td></tr>' +\n  '<tr><td class=\"lbl\">اسم الأب</td><td class=\"val\">' + v(d.fatherName) + '</td></tr>' +\n  '<tr><td class=\"lbl\">تاريخ الميلاد</td><td class=\"val\">' + v(d.birthDate) + '</td></tr>' +\n  '<tr><td class=\"lbl\">الجنس</td><td class=\"val\">' + v(d.gender) + '</td></tr>' +\n  '</table></div>' +\n  '<div class=\"sec\"><div class=\"sec-title\">البيانات المهنية</div><table>' +\n  '<tr><td class=\"lbl\">التخصص</td><td class=\"val\">' + v(d.specialty) + '</td></tr>' +\n  '<tr><td class=\"lbl\">نوع العضوية</td><td class=\"val\">' + v(d.membershipType) + '</td></tr>' +\n  '<tr><td class=\"lbl\">تاريخ الانضمام</td><td class=\"val\">' + v(d.joinDate) + '</td></tr>' +\n  '<tr><td class=\"lbl\">ESC ID</td><td class=\"val\">' + v(d.escId) + '</td></tr>' +\n  '</table></div>' +\n  '<div class=\"sec\"><div class=\"sec-title\">بيانات التواصل</div><table>' +\n  '<tr><td class=\"lbl\">البريد الإلكتروني</td><td class=\"val\">' + v(d.email) + '</td></tr>' +\n  '<tr><td class=\"lbl\">رقم الهاتف</td><td class=\"val\">' + v(d.phone) + '</td></tr>' +\n  '<tr><td class=\"lbl\">المدينة</td><td class=\"val\">' + v(d.city) + '</td></tr>' +\n  '<tr><td class=\"lbl\">عنوان العمل</td><td class=\"val\">' + v(d.workAddress) + '</td></tr>' +\n  '</table></div>' +\n  '<div class=\"sec\"><div class=\"sec-title\">معلومات الطلب</div><table>' +\n  '<tr><td class=\"lbl\">لغة النموذج</td><td class=\"val\">' + (isAr ? 'العربية' : 'الإنجليزية') + '</td></tr>' +\n  '<tr><td class=\"lbl\">وقت الإرسال</td><td class=\"val\">' + new Date(d.submittedAt || Date.now()).toLocaleString('ar-SY') + '</td></tr>' +\n  '</table></div>' +\n  '</div><div class=\"ftr\">' +\n  '<div class=\"ftr-org\">الرابطة السورية لأمراض وجراحة القلب</div>' +\n  '<div class=\"ftr-sub\">Syrian Cardiovascular Association — SCVA</div>' +\n  '</div></div></body></html>';\n\n// ── Member Confirmation Email (bilingual) ──────────────────────────────\nconst dir       = isAr ? 'rtl' : 'ltr';\nconst lang      = d.language || 'ar';\nconst greeting  = isAr ? ('عزيزي/عزيزتي ' + v(d.fullName)) : ('Dear ' + v(d.englishName));\nconst title     = isAr ? 'تم استلام طلب العضوية' : 'Membership Application Received';\nconst orgName   = isAr ? 'الرابطة السورية لأمراض وجراحة القلب' : 'Syrian Cardiovascular Association — SCVA';\nconst msgBody   = isAr\n  ? 'يسعدنا إخبارك بأنه تم استلام طلب انضمامك إلى الرابطة السورية لأمراض وجراحة القلب بنجاح. سيقوم فريقنا المختص بمراجعة طلبك والتواصل معك قريباً لإتمام إجراءات القبول.'\n  : 'We are pleased to inform you that your membership application to the Syrian Cardiovascular Association (SCVA) has been successfully received. Our team will review your application and contact you soon.';\nconst stepsTitle = isAr ? 'الخطوات القادمة' : 'Next Steps';\nconst steps = isAr\n  ? ['مراجعة طلبك من قِبل لجنة القبول','التواصل معك للتحقق من المعلومات إذا لزم','إشعارك بقرار القبول النهائي']\n  : ['Review by the admission committee','Contact you to verify information if needed','Notify you of the final admission decision'];\nconst stepsHtml = steps.map(function(s){ return '<li>' + s + '</li>'; }).join('');\nconst nameVal   = isAr ? v(d.fullName) : v(d.englishName);\nconst submittedVal = new Date(d.submittedAt || Date.now()).toLocaleString(isAr ? 'ar-SY' : 'en-GB');\n\nconst memberHtml = '<!DOCTYPE html>' +\n  '<html dir=\"' + dir + '\" lang=\"' + lang + '\"><head><meta charset=\"UTF-8\">' +\n  '<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">' +\n  '<style>' +\n  'body{font-family:Segoe UI,Arial,sans-serif;background:#f0f4f8;margin:0;padding:20px;color:#1a202c}' +\n  '.card{max-width:620px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10)}' +\n  '.hdr{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:#fff;padding:32px;text-align:center}' +\n  '.hdr h1{margin:0 0 6px;font-size:18px;font-weight:700}.hdr p{margin:0;font-size:12px;opacity:.78}' +\n  '.body{padding:28px 32px}' +\n  '.greeting{font-size:15px;font-weight:600;margin-bottom:14px;color:#0f172a}' +\n  '.msg{font-size:13px;line-height:1.85;color:#475569;margin-bottom:24px}' +\n  '.sec{margin-bottom:22px}' +\n  '.sec-title{font-size:11px;font-weight:700;color:#06b6d4;letter-spacing:.6px;text-transform:uppercase;border-bottom:1.5px solid #e2e8f0;padding-bottom:5px;margin-bottom:10px}' +\n  'table{width:100%;border-collapse:collapse}tr:nth-child(even) td{background:#f8fafc}' +\n  'td{padding:8px 10px;font-size:13px;vertical-align:top;border-bottom:1px solid #f1f5f9}' +\n  'td.lbl{width:40%;color:#64748b;font-weight:600}td.val{color:#1e293b;font-weight:500}' +\n  '.steps{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px 20px;margin-bottom:22px}' +\n  '.steps h4{margin:0 0 10px;font-size:13px;font-weight:700;color:#1d4ed8}' +\n  '.steps ol{margin:0;padding-inline-start:20px}' +\n  '.steps li{font-size:13px;color:#374151;margin-bottom:6px;line-height:1.6}' +\n  '.ftr{background:#f8fafc;padding:18px 32px;text-align:center;border-top:1px solid #e2e8f0}' +\n  '.ftr-org{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:3px}.ftr-sub{font-size:11px;color:#94a3b8}' +\n  '</style></head><body><div class=\"card\">' +\n  '<div class=\"hdr\"><div style=\"font-size:38px;margin-bottom:10px\">✅</div>' +\n  '<h1>' + title + '</h1><p>' + orgName + '</p></div>' +\n  '<div class=\"body\">' +\n  '<div class=\"greeting\">' + greeting + ',</div>' +\n  '<div class=\"msg\">' + msgBody + '</div>' +\n  '<div class=\"sec\"><div class=\"sec-title\">' + (isAr ? 'ملخص طلبك' : 'Application Summary') + '</div><table>' +\n  '<tr><td class=\"lbl\">' + (isAr ? 'الاسم' : 'Name') + '</td><td class=\"val\">' + nameVal + '</td></tr>' +\n  '<tr><td class=\"lbl\">' + (isAr ? 'البريد الإلكتروني' : 'Email') + '</td><td class=\"val\">' + v(d.email) + '</td></tr>' +\n  '<tr><td class=\"lbl\">' + (isAr ? 'نوع العضوية' : 'Membership type') + '</td><td class=\"val\">' + v(d.membershipType) + '</td></tr>' +\n  '<tr><td class=\"lbl\">' + (isAr ? 'وقت الإرسال' : 'Submitted at') + '</td><td class=\"val\">' + submittedVal + '</td></tr>' +\n  '</table></div>' +\n  '<div class=\"steps\"><h4>' + stepsTitle + '</h4><ol>' + stepsHtml + '</ol></div>' +\n  '</div><div class=\"ftr\">' +\n  '<div class=\"ftr-org\">الرابطة السورية لأمراض وجراحة القلب</div>' +\n  '<div class=\"ftr-sub\">Syrian Cardiovascular Association — SCVA</div>' +\n  '</div></div></body></html>';\n\nreturn [{\n  json: {\n    adminHtml:     adminHtml,\n    memberHtml:    memberHtml,\n    adminSubject:  '🔔 عضو جديد: ' + (v(d.fullName) !== '—' ? v(d.fullName) : v(d.englishName)) + ' | الرابطة السورية لأمراض وجراحة القلب',\n    memberSubject: isAr ? '✅ تم استلام طلب انضمامك | الرابطة السورية لأمراض وجراحة القلب' : '✅ Your Membership Application Received | SCVA',\n    memberEmail:   d.email || '',\n    language:      d.language || 'ar',\n  }\n}];"
+      },
+      "id": "build-email-html",
+      "name": "Build Email HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        300
+      ]
     }
   ],
   "connections": {
     "Webhook — Receive Registration": {
       "main": [
-        [{ "node": "Verify Invitation Code", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Verify Invitation Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Verify Invitation Code": {
       "main": [
-        [{ "node": "Format & Validate Data", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Format & Validate Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Format & Validate Data": {
       "main": [
-        [{ "node": "Append to SCVA Excel (HTTP)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Append to SCVA Excel (HTTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Append to SCVA Excel (HTTP)": {
       "main": [
-        [{ "node": "Is Duplicate?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Is Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Is Duplicate?": {
       "main": [
-        [{ "node": "Respond — Duplicate", "type": "main", "index": 0 }],
-        [{ "node": "Email Admin — Notification", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Respond — Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Email HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Email Admin — Notification": {
       "main": [
-        [{ "node": "Member has email?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Member has email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Member has email?": {
       "main": [
-        [{ "node": "Email Member — Confirmation", "type": "main", "index": 0 }],
-        [{ "node": "Respond — 200 Success", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Email Member — Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond — 200 Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Email Member — Confirmation": {
       "main": [
-        [{ "node": "Respond — 200 Success", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Respond — 200 Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email HTML": {
+      "main": [
+        [
+          {
+            "node": "Email Admin — Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -255,7 +376,10 @@
   },
   "staticData": null,
   "tags": [
-    { "name": "SCVA", "createdAt": "2026-05-04T00:00:00.000Z" }
+    {
+      "name": "SCVA",
+      "createdAt": "2026-05-04T00:00:00.000Z"
+    }
   ],
   "triggerCount": 0,
   "updatedAt": "2026-05-05T00:00:00.000Z",
@@ -279,7 +403,10 @@
       "لا حاجة لأي ملفات على جهاز n8n — البيانات تُكتب مباشرة في التطبيق"
     ],
     "webhookPath": "/webhook/scva-member-register",
-    "supportedLanguages": ["ar", "en"],
+    "supportedLanguages": [
+      "ar",
+      "en"
+    ],
     "architecture": "HTTP API — n8n يرسل البيانات عبر HTTP إلى سيرفر SCVA مباشرة"
   }
 }
