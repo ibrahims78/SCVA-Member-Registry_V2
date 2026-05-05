@@ -953,62 +953,82 @@ export async function registerRoutes(
       let ws: ReturnType<typeof XLSX.default.utils.aoa_to_sheet>;
       let sheetName: string;
 
+      const AR_HEADERS = [
+        "الاسم الأول", "الكنية", "الاسم بالعربية", "اسم الأب",
+        "الاسم بالإنجليزية", "تاريخ الميلاد", "الجنس", "التخصص",
+        "البريد الإلكتروني", "رقم الهاتف", "المدينة", "عنوان العمل",
+        "تاريخ الانضمام", "نوع العضوية", "معرّف الجمعية الأوروبية", "تاريخ التسجيل",
+      ];
+      const EN_HEADERS = [
+        "First name", "Last name", "Full name (Arabic)", "Father's name",
+        "Full name (English)", "Date of birth", "Gender", "Specialty",
+        "Email", "Phone", "City", "Work address",
+        "Join date", "Membership type", "ESC ID", "Submitted at",
+      ];
+      const headers = lang === "ar" ? AR_HEADERS : EN_HEADERS;
+
       if (fsModule.default.existsSync(filePath)) {
         const buf = fsModule.default.readFileSync(filePath);
         wb = XLSX.default.read(buf, { type: "buffer" });
         sheetName = wb.SheetNames[0];
         ws = wb.Sheets[sheetName];
+        // If the sheet is empty (no data at all), initialize it with the header row
+        const existingRows = XLSX.default.utils.sheet_to_json(ws, { header: 1 }) as unknown[][];
+        if (existingRows.length === 0) {
+          ws = XLSX.default.utils.aoa_to_sheet([headers]);
+          wb.Sheets[sheetName] = ws;
+        }
       } else {
         wb = XLSX.default.utils.book_new();
-        ws = XLSX.default.utils.aoa_to_sheet([]);
         sheetName = lang === "ar" ? "الأعضاء" : "Members";
+        ws = XLSX.default.utils.aoa_to_sheet([headers]);
         XLSX.default.utils.book_append_sheet(wb, ws, sheetName);
       }
 
       const clean = (v: unknown) => (v != null ? String(v).trim() : "");
 
-      let newRow: Record<string, unknown>;
+      let newRow: unknown[];
       if (lang === "ar") {
-        newRow = {
-          "الاسم الأول":            clean(data.firstName),
-          "الكنية":                  clean(data.lastName),
-          "الاسم بالعربية":         clean(data.fullName),
-          "اسم الأب":               clean(data.fatherName),
-          "الاسم بالإنجليزية":      clean(data.englishName),
-          "تاريخ الميلاد":          clean(data.birthDate),
-          "الجنس":                   clean(data.gender),
-          "التخصص":                  clean(data.specialty),
-          "البريد الإلكتروني":      clean(data.email),
-          "رقم الهاتف":             clean(data.phone),
-          "المدينة":                 clean(data.city),
-          "عنوان العمل":            clean(data.workAddress),
-          "تاريخ الانضمام":         clean(data.joinDate),
-          "نوع العضوية":            clean(data.membershipType),
-          "معرّف الجمعية الأوروبية": clean(data.escId),
-          "تاريخ التسجيل":          clean(data.submittedAt ?? new Date().toISOString()),
-        };
+        newRow = [
+          clean(data.firstName),
+          clean(data.lastName),
+          clean(data.fullName),
+          clean(data.fatherName),
+          clean(data.englishName),
+          clean(data.birthDate),
+          clean(data.gender),
+          clean(data.specialty),
+          clean(data.email),
+          clean(data.phone),
+          clean(data.city),
+          clean(data.workAddress),
+          clean(data.joinDate),
+          clean(data.membershipType),
+          clean(data.escId),
+          clean(data.submittedAt ?? new Date().toISOString()),
+        ];
       } else {
-        newRow = {
-          "First name":          clean(data.firstName),
-          "Last name":           clean(data.lastName),
-          "Full name (Arabic)":  clean(data.fullName),
-          "Father's name":       clean(data.fatherName),
-          "Full name (English)": clean(data.englishName),
-          "Date of birth":       clean(data.birthDate),
-          "Gender":              clean(data.genderRaw ?? data.gender),
-          "Specialty":           clean(data.specialtyRaw ?? data.specialty),
-          "Email":               clean(data.email),
-          "Phone":               clean(data.phone),
-          "City":                clean(data.city),
-          "Work address":        clean(data.workAddress),
-          "Join date":           clean(data.joinDate),
-          "Membership type":     clean(data.membershipTypeRaw ?? data.membershipType),
-          "ESC ID":              clean(data.escId),
-          "Submitted at":        clean(data.submittedAt ?? new Date().toISOString()),
-        };
+        newRow = [
+          clean(data.firstName),
+          clean(data.lastName),
+          clean(data.fullName),
+          clean(data.fatherName),
+          clean(data.englishName),
+          clean(data.birthDate),
+          clean(data.genderRaw ?? data.gender),
+          clean(data.specialtyRaw ?? data.specialty),
+          clean(data.email),
+          clean(data.phone),
+          clean(data.city),
+          clean(data.workAddress),
+          clean(data.joinDate),
+          clean(data.membershipTypeRaw ?? data.membershipType),
+          clean(data.escId),
+          clean(data.submittedAt ?? new Date().toISOString()),
+        ];
       }
 
-      XLSX.default.utils.sheet_add_json(ws, [newRow], { skipHeader: false, origin: -1 });
+      XLSX.default.utils.sheet_add_aoa(ws, [newRow], { origin: -1 });
       const outBuf = XLSX.default.write(wb, { type: "buffer", bookType: "xlsx" });
       fsModule.default.writeFileSync(filePath, outBuf);
 
