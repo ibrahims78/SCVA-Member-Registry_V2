@@ -405,68 +405,129 @@
   #print-doc { display: none; }
 
   @media print {
-    @page { size: A4; margin: 14mm 18mm; }
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+    @page { size: A4; margin: 15mm 18mm; }
+    *, *::before, *::after {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      background: #ffffff !important;
+      color: #1a1a1a !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
 
     /* Hide all screen content */
-    .toolbar, .container { display: none !important; }
+    .toolbar, .container, #restore-banner { display: none !important; }
 
     /* Show the print document */
     #print-doc {
       display: block !important;
       font-family: 'Segoe UI', 'Noto Sans Arabic', Tahoma, Arial, sans-serif;
-      color: #1a202c;
+      color: #1a1a1a !important;
+      background: #ffffff !important;
       direction: rtl;
       font-size: 11pt;
+      line-height: 1.55;
     }
 
     /* ── Print Header ── */
     .ph-wrap {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-bottom: 10px;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 3px solid #1a365d;
+      margin-bottom: 6px;
     }
     .ph-logo {
-      width: 58px; height: 58px;
+      width: 72px; height: 72px;
       border-radius: 50%;
-      border: 2px solid #06b6d4;
+      border: 2px solid #1a365d;
       object-fit: cover;
       flex-shrink: 0;
     }
-    .ph-info { flex: 1; }
-    .ph-name-ar { font-size: 15pt; font-weight: 700; color: #0f2027; line-height: 1.3; }
-    .ph-name-en { font-size: 9pt; color: #64748b; margin-top: 2px; }
-    .ph-hr { border: none; border-top: 2.5px solid #0f2027; margin: 10px 0 6px; }
-    .ph-doc-title { font-size: 13pt; font-weight: 700; text-align: center; color: #0f2027; margin-bottom: 1px; }
-    .ph-doc-sub   { font-size: 9pt; text-align: center; color: #64748b; margin-bottom: 14px; }
+    .ph-info { flex: 1; text-align: center; }
+    .ph-name-ar {
+      font-size: 16pt; font-weight: 800;
+      color: #1a365d !important;
+      line-height: 1.3; margin-bottom: 3px;
+    }
+    .ph-name-en {
+      font-size: 9pt; color: #4a5568 !important; font-weight: 500;
+    }
+    .ph-hr { border: none; border-top: 1px solid #cbd5e1; margin: 8px 0 4px; }
+    .ph-doc-title {
+      font-size: 14pt; font-weight: 800;
+      text-align: center; color: #1a365d !important;
+      margin: 8px 0 2px; letter-spacing: 0.3px;
+    }
+    .ph-doc-sub {
+      font-size: 9pt; text-align: center;
+      color: #64748b !important; margin-bottom: 16px;
+    }
 
-    /* ── Print Section ── */
-    .ps-wrap { margin-bottom: 12px; break-inside: avoid; }
+    /* ── Print Sections ── */
+    .ps-wrap {
+      margin-bottom: 10px;
+      break-inside: avoid;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      overflow: hidden;
+    }
     .ps-title {
-      font-size: 9pt; font-weight: 700; color: #06b6d4;
-      border-bottom: 1px solid #cbd5e1;
-      padding-bottom: 3px; margin-bottom: 6px;
-      text-transform: uppercase; letter-spacing: 0.4px;
+      font-size: 9.5pt; font-weight: 700;
+      color: #ffffff !important;
+      background: #1a365d !important;
+      padding: 5px 10px; margin: 0;
+      letter-spacing: 0.3px;
     }
-    .pt { width: 100%; border-collapse: collapse; }
-    .pt tr:nth-child(even) td { background: #f8fafc; }
+    .pt { width: 100%; border-collapse: collapse; background: #ffffff !important; }
+    .pt tr { border-bottom: 1px solid #e5e7eb; }
+    .pt tr:nth-child(even) td { background: #f9fafb !important; }
     .pt td {
-      padding: 5px 8px;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 6px 10px;
       vertical-align: top;
-      font-size: 10pt;
+      font-size: 10.5pt;
+      color: #1a1a1a !important;
     }
-    .pt td:first-child { width: 36%; color: #64748b; font-weight: 600; }
-    .pt td:last-child  { color: #1e293b; font-weight: 500; }
+    .pt td:first-child {
+      width: 35%;
+      color: #374151 !important;
+      font-weight: 700;
+      border-left: 1px solid #e5e7eb;
+    }
+    .pt td:last-child { color: #111827 !important; font-weight: 500; }
 
     /* ── Print Footer ── */
-    .pf-hr { border: none; border-top: 1px solid #e2e8f0; margin-top: 14px; padding-top: 8px; }
+    .pf-hr {
+      margin-top: 22px;
+      padding-top: 14px;
+      border-top: 2px solid #1a365d;
+    }
     .pf-line {
       display: flex; justify-content: space-between;
-      font-size: 8.5pt; color: #94a3b8;
+      font-size: 8.5pt; color: #6b7280 !important;
+      margin-bottom: 22px;
     }
-    .pf-org { text-align: center; font-size: 9pt; font-weight: 600; color: #0f2027; margin-top: 4px; }
+    .pf-sig-row {
+      display: flex; justify-content: space-between;
+      gap: 24px; margin-bottom: 8px;
+    }
+    .pf-sig-box { flex: 1; text-align: center; }
+    .pf-sig-line {
+      border-bottom: 1.5px solid #374151;
+      height: 38px; margin-bottom: 5px;
+    }
+    .pf-sig-label { font-size: 8.5pt; color: #6b7280 !important; }
+    .pf-org {
+      text-align: center; font-size: 9pt;
+      font-weight: 700; color: #1a365d !important;
+      margin-top: 10px; padding-top: 6px;
+      border-top: 1px solid #e5e7eb;
+    }
   }
 </style>
 </head>
@@ -818,6 +879,16 @@
     <div class="pf-line">
       <span id="print-ref"></span>
       <span id="print-datetime"></span>
+    </div>
+    <div class="pf-sig-row">
+      <div class="pf-sig-box">
+        <div class="pf-sig-line"></div>
+        <div class="pf-sig-label">توقيع مقدّم الطلب</div>
+      </div>
+      <div class="pf-sig-box">
+        <div class="pf-sig-line"></div>
+        <div class="pf-sig-label">توقيع المسؤول / الختم الرسمي</div>
+      </div>
     </div>
     <div class="pf-org">الرابطة السورية لأمراض وجراحة القلب — Syrian Cardiovascular Association</div>
   </div>
@@ -1399,10 +1470,34 @@ async function submitForm() {
         document.getElementById('btn-submit-txt').textContent = L.btnSubmit;
         return;
       }
+      if (resBody.code === 'DUPLICATE_ENTRY') {
+        const dupMsg = currentLang === 'ar'
+          ? 'أنت مسجّل بالفعل في الرابطة. إذا كنت تعتقد أن ذلك خطأ، تواصل مع إدارة الجمعية.'
+          : 'You are already registered. If you believe this is an error, please contact the association.';
+        showErr('err-submit', dupMsg);
+        isSubmitting = false;
+        setSpinner('spinner-submit', false);
+        document.getElementById('btn-submit').disabled = false;
+        document.getElementById('btn-submit-txt').textContent = L.btnSubmit;
+        return;
+      }
       const errMsg = (currentLang === 'ar' ? resBody.message_ar : resBody.message_en)
         || resBody.message
         || L.submitError;
       throw new Error(errMsg);
+    }
+
+    // Also treat isDuplicate:true as a non-fatal duplicate (server returned 200 but didn't add)
+    if (resBody.isDuplicate) {
+      const dupMsg = currentLang === 'ar'
+        ? 'أنت مسجّل بالفعل في الرابطة. إذا كنت تعتقد أن ذلك خطأ، تواصل مع إدارة الجمعية.'
+        : 'You are already registered. If you believe this is an error, please contact the association.';
+      showErr('err-submit', dupMsg);
+      isSubmitting = false;
+      setSpinner('spinner-submit', false);
+      document.getElementById('btn-submit').disabled = false;
+      document.getElementById('btn-submit-txt').textContent = L.btnSubmit;
+      return;
     }
 
     // Only show success when workflow explicitly confirms status:'success'

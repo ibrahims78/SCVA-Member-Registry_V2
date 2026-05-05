@@ -81,7 +81,7 @@
         "subject": "=\uD83D\uDD14 عضو جديد: {{ $('Format & Validate Data').item.json.fullName || $('Format & Validate Data').item.json.englishName }} | الرابطة السورية لأمراض وجراحة القلب",
         "emailType": "html",
         "message": "=<!DOCTYPE html>\n<html dir=\"rtl\" lang=\"ar\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<style>\n  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1a202c; direction: rtl; }\n  .card { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }\n  .hdr { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); color: #ffffff; padding: 32px; text-align: center; }\n  .hdr-icon { font-size: 38px; margin-bottom: 10px; }\n  .hdr h1 { margin: 0 0 6px; font-size: 18px; font-weight: 700; }\n  .hdr p  { margin: 0; font-size: 12px; opacity: 0.78; }\n  .badge { display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; margin-top: 10px; }\n  .body { padding: 28px 32px; }\n  .alert-new { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; margin-bottom: 22px; font-size: 13px; color: #166534; }\n  .sec { margin-bottom: 22px; }\n  .sec-title { font-size: 11px; font-weight: 700; color: #06b6d4; letter-spacing: 0.6px; text-transform: uppercase; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 10px; }\n  table { width: 100%; border-collapse: collapse; }\n  tr:nth-child(even) td { background: #f8fafc; }\n  td { padding: 8px 10px; font-size: 13px; vertical-align: top; border-bottom: 1px solid #f1f5f9; }\n  td.lbl { width: 36%; color: #64748b; font-weight: 600; white-space: nowrap; }\n  td.val { color: #1e293b; font-weight: 500; }\n  .ftr { background: #f8fafc; padding: 18px 32px; text-align: center; border-top: 1px solid #e2e8f0; }\n  .ftr-org { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }\n  .ftr-sub { font-size: 11px; color: #94a3b8; }\n</style>\n</head>\n<body>\n<div class=\"card\">\n  <div class=\"hdr\">\n    <div class=\"hdr-icon\">\uD83D\uDD14</div>\n    <h1>إشعار تسجيل عضو جديد</h1>\n    <p>الرابطة السورية لأمراض وجراحة القلب</p>\n    <span class=\"badge\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'نموذج عربي' : 'English Form' }}</span>\n  </div>\n  <div class=\"body\">\n    <div class=\"alert-new\">\u2705 تم استلام طلب عضوية جديد بنجاح عبر النموذج الإلكتروني.</div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">البيانات الشخصية</div>\n      <table>\n        <tr><td class=\"lbl\">الاسم الأول</td><td class=\"val\">{{ $('Format & Validate Data').item.json.firstName }}</td></tr>\n        <tr><td class=\"lbl\">الكنية</td><td class=\"val\">{{ $('Format & Validate Data').item.json.lastName }}</td></tr>\n        <tr><td class=\"lbl\">الاسم الكامل (عربي)</td><td class=\"val\">{{ $('Format & Validate Data').item.json.fullName }}</td></tr>\n        <tr><td class=\"lbl\">الاسم الكامل (إنجليزي)</td><td class=\"val\">{{ $('Format & Validate Data').item.json.englishName }}</td></tr>\n        <tr><td class=\"lbl\">اسم الأب</td><td class=\"val\">{{ $('Format & Validate Data').item.json.fatherName || '—' }}</td></tr>\n        <tr><td class=\"lbl\">تاريخ الميلاد</td><td class=\"val\">{{ $('Format & Validate Data').item.json.birthDate || '—' }}</td></tr>\n        <tr><td class=\"lbl\">الجنس</td><td class=\"val\">{{ $('Format & Validate Data').item.json.gender || '—' }}</td></tr>\n      </table>\n    </div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">البيانات المهنية</div>\n      <table>\n        <tr><td class=\"lbl\">التخصص</td><td class=\"val\">{{ $('Format & Validate Data').item.json.specialty || '—' }}</td></tr>\n        <tr><td class=\"lbl\">نوع العضوية</td><td class=\"val\">{{ $('Format & Validate Data').item.json.membershipType || '—' }}</td></tr>\n        <tr><td class=\"lbl\">تاريخ الانضمام</td><td class=\"val\">{{ $('Format & Validate Data').item.json.joinDate || '—' }}</td></tr>\n        <tr><td class=\"lbl\">ESC ID</td><td class=\"val\">{{ $('Format & Validate Data').item.json.escId || '—' }}</td></tr>\n      </table>\n    </div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">بيانات التواصل</div>\n      <table>\n        <tr><td class=\"lbl\">البريد الإلكتروني</td><td class=\"val\">{{ $('Format & Validate Data').item.json.email || '—' }}</td></tr>\n        <tr><td class=\"lbl\">رقم الهاتف</td><td class=\"val\">{{ $('Format & Validate Data').item.json.phone || '—' }}</td></tr>\n        <tr><td class=\"lbl\">المدينة</td><td class=\"val\">{{ $('Format & Validate Data').item.json.city || '—' }}</td></tr>\n        <tr><td class=\"lbl\">عنوان العمل</td><td class=\"val\">{{ $('Format & Validate Data').item.json.workAddress || '—' }}</td></tr>\n      </table>\n    </div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">معلومات الطلب</div>\n      <table>\n        <tr><td class=\"lbl\">لغة النموذج</td><td class=\"val\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'العربية' : 'الإنجليزية' }}</td></tr>\n        <tr><td class=\"lbl\">وقت الإرسال</td><td class=\"val\">{{ new Date($('Format & Validate Data').item.json.submittedAt).toLocaleString('ar-SY') }}</td></tr>\n      </table>\n    </div>\n  </div>\n  <div class=\"ftr\">\n    <div class=\"ftr-org\">الرابطة السورية لأمراض وجراحة القلب</div>\n    <div class=\"ftr-sub\">Syrian Cardiovascular Association — SCVA</div>\n  </div>\n</div>\n</body>\n</html>",
-        "options": {}
+        "options": {"appendAttribution": false}
       },
       "id": "email-admin",
       "name": "Email Admin — Notification",
@@ -124,7 +124,7 @@
         "subject": "={{ $('Format & Validate Data').item.json.language === 'ar' ? '\u2705 تم استلام طلب انضمامك | الرابطة السورية لأمراض وجراحة القلب' : '\u2705 Your Membership Application Received | Syrian Cardiovascular Association (SCVA)' }}",
         "emailType": "html",
         "message": "=<!DOCTYPE html>\n<html dir=\"{{ $('Format & Validate Data').item.json.language === 'ar' ? 'rtl' : 'ltr' }}\" lang=\"{{ $('Format & Validate Data').item.json.language }}\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<style>\n  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1a202c; }\n  .card { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }\n  .hdr { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); color: #ffffff; padding: 32px; text-align: center; }\n  .hdr-icon { font-size: 38px; margin-bottom: 10px; }\n  .hdr h1 { margin: 0 0 6px; font-size: 18px; font-weight: 700; }\n  .hdr p  { margin: 0; font-size: 12px; opacity: 0.78; }\n  .body { padding: 28px 32px; }\n  .greeting { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: #0f172a; }\n  .msg { font-size: 13px; line-height: 1.85; color: #475569; margin-bottom: 24px; }\n  .sec { margin-bottom: 22px; }\n  .sec-title { font-size: 11px; font-weight: 700; color: #06b6d4; letter-spacing: 0.6px; text-transform: uppercase; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 10px; }\n  table { width: 100%; border-collapse: collapse; }\n  tr:nth-child(even) td { background: #f8fafc; }\n  td { padding: 8px 10px; font-size: 13px; vertical-align: top; border-bottom: 1px solid #f1f5f9; }\n  td.lbl { width: 40%; color: #64748b; font-weight: 600; }\n  td.val { color: #1e293b; font-weight: 500; }\n  .steps { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px 20px; margin-bottom: 22px; }\n  .steps h4 { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #1d4ed8; }\n  .steps ol { margin: 0; padding-inline-start: 20px; }\n  .steps li { font-size: 13px; color: #374151; margin-bottom: 6px; line-height: 1.6; }\n  .ftr { background: #f8fafc; padding: 18px 32px; text-align: center; border-top: 1px solid #e2e8f0; }\n  .ftr-org { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }\n  .ftr-sub { font-size: 11px; color: #94a3b8; }\n</style>\n</head>\n<body>\n<div class=\"card\">\n  <div class=\"hdr\">\n    <div class=\"hdr-icon\">\u2705</div>\n    <h1>{{ $('Format & Validate Data').item.json.language === 'ar' ? 'تم استلام طلب العضوية' : 'Membership Application Received' }}</h1>\n    <p>{{ $('Format & Validate Data').item.json.language === 'ar' ? 'الرابطة السورية لأمراض وجراحة القلب' : 'Syrian Cardiovascular Association — SCVA' }}</p>\n  </div>\n  <div class=\"body\">\n    <div class=\"greeting\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'عزيزي/عزيزتي ' + $('Format & Validate Data').item.json.fullName : 'Dear ' + $('Format & Validate Data').item.json.englishName }},</div>\n    <div class=\"msg\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'يسعدنا إخبارك بأنه تم استلام طلب انضمامك إلى الرابطة السورية لأمراض وجراحة القلب بنجاح. سيقوم فريقنا المختص بمراجعة طلبك والتواصل معك قريباً لإتمام إجراءات القبول.' : 'We are pleased to inform you that your membership application to the Syrian Cardiovascular Association (SCVA) has been successfully received. Our team will review your application and contact you shortly to complete the membership process.' }}</div>\n\n    <div class=\"sec\">\n      <div class=\"sec-title\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'ملخص بياناتك المُرسَلة' : 'Your Submitted Information' }}</div>\n      <table>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'الاسم الكامل (عربي)' : 'Full Name (Arabic)' }}</td><td class=\"val\">{{ $('Format & Validate Data').item.json.fullName }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'الاسم الكامل (إنجليزي)' : 'Full Name (English)' }}</td><td class=\"val\">{{ $('Format & Validate Data').item.json.englishName }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'التخصص' : 'Specialty' }}</td><td class=\"val\">{{ $('Format & Validate Data').item.json.specialty || '—' }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'نوع العضوية' : 'Membership Type' }}</td><td class=\"val\">{{ $('Format & Validate Data').item.json.membershipType || '—' }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'البريد الإلكتروني' : 'Email' }}</td><td class=\"val\">{{ $('Format & Validate Data').item.json.email }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'رقم الهاتف' : 'Phone' }}</td><td class=\"val\">{{ $('Format & Validate Data').item.json.phone || '—' }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'المدينة' : 'City' }}</td><td class=\"val\">{{ $('Format & Validate Data').item.json.city || '—' }}</td></tr>\n        <tr><td class=\"lbl\">{{ $('Format & Validate Data').item.json.language === 'ar' ? 'تاريخ الإرسال' : 'Submission Date' }}</td><td class=\"val\">{{ new Date($('Format & Validate Data').item.json.submittedAt).toLocaleDateString($('Format & Validate Data').item.json.language === 'ar' ? 'ar-SY' : 'en-GB') }}</td></tr>\n      </table>\n    </div>\n\n    <div class=\"steps\">\n      <h4>{{ $('Format & Validate Data').item.json.language === 'ar' ? '\uD83D\uDCCB الخطوات التالية' : '\uD83D\uDCCB Next Steps' }}</h4>\n      <ol>\n        <li>{{ $('Format & Validate Data').item.json.language === 'ar' ? 'ستتلقى اتصالاً من إدارة الرابطة لتأكيد قبولك.' : 'You will be contacted by the SCVA administration to confirm your acceptance.' }}</li>\n        <li>{{ $('Format & Validate Data').item.json.language === 'ar' ? 'قد يُطلب منك استكمال بعض الوثائق المطلوبة.' : 'You may be asked to provide additional required documents.' }}</li>\n        <li>{{ $('Format & Validate Data').item.json.language === 'ar' ? 'بعد الموافقة ستصلك بطاقة العضوية الرسمية.' : 'Upon approval, your official membership card will be issued.' }}</li>\n      </ol>\n    </div>\n  </div>\n  <div class=\"ftr\">\n    <div class=\"ftr-org\">الرابطة السورية لأمراض وجراحة القلب</div>\n    <div class=\"ftr-sub\">Syrian Cardiovascular Association — SCVA</div>\n  </div>\n</div>\n</body>\n</html>",
-        "options": {}
+        "options": {"appendAttribution": false}
       },
       "id": "email-member",
       "name": "Email Member — Confirmation",
@@ -159,6 +159,48 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [460, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "dup-check",
+              "leftValue": "={{ $json.isDuplicate }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "is-duplicate",
+      "name": "Is Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 480]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'error', code: 'DUPLICATE_ENTRY', message_ar: 'أنت مسجّل بالفعل في الرابطة. لا يمكن إرسال الطلب أكثر من مرة. إذا كنت تعتقد أن ذلك خطأ تواصل مع إدارة الجمعية.', message_en: 'You are already registered in the association. You cannot submit the form again. If you believe this is an error, please contact the administration.' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-duplicate",
+      "name": "Respond — Duplicate",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1340, 620]
     }
   ],
   "connections": {
@@ -179,6 +221,12 @@
     },
     "Append to SCVA Excel (HTTP)": {
       "main": [
+        [{ "node": "Is Duplicate?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is Duplicate?": {
+      "main": [
+        [{ "node": "Respond — Duplicate", "type": "main", "index": 0 }],
         [{ "node": "Email Admin — Notification", "type": "main", "index": 0 }]
       ]
     },

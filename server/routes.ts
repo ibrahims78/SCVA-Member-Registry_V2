@@ -972,8 +972,45 @@ export async function registerRoutes(
         wb = XLSX.default.read(buf, { type: "buffer" });
         sheetName = wb.SheetNames[0];
         ws = wb.Sheets[sheetName];
-        // If the sheet is empty (no data at all), initialize it with the header row
         const existingRows = XLSX.default.utils.sheet_to_json(ws, { header: 1 }) as unknown[][];
+
+        // ── Duplicate detection ──────────────────────────────────────────────
+        if (existingRows.length > 1) {
+          const incomingEmail = String(data.email ?? "").trim().toLowerCase();
+          const incomingFullName = String(data.fullName ?? "").trim();
+          const incomingEnName = String(data.englishName ?? "").trim();
+          const incomingFirst = String(data.firstName ?? "").trim();
+          const incomingLast = String(data.lastName ?? "").trim();
+
+          for (const row of existingRows.slice(1) as unknown[][]) {
+            const rowEmail    = row[8]  != null ? String(row[8]).trim().toLowerCase()  : "";
+            const rowFullName = row[2]  != null ? String(row[2]).trim()  : "";
+            const rowEnName   = row[4]  != null ? String(row[4]).trim()  : "";
+            const rowFirst    = row[0]  != null ? String(row[0]).trim()  : "";
+            const rowLast     = row[1]  != null ? String(row[1]).trim()  : "";
+
+            const emailMatch = incomingEmail && rowEmail && rowEmail === incomingEmail;
+            const nameMatch  =
+              !incomingEmail &&
+              incomingFirst && rowFirst === incomingFirst &&
+              incomingLast  && rowLast  === incomingLast  &&
+              ((!incomingFullName && !rowFullName) || rowFullName === incomingFullName) &&
+              ((!incomingEnName  && !rowEnName)   || rowEnName   === incomingEnName);
+
+            if (emailMatch || nameMatch) {
+              console.log(`[EXCEL] تم رفض تسجيل مكرر: ${incomingEmail || incomingFullName}`);
+              return res.json({
+                success: true,
+                isDuplicate: true,
+                message: "هذا العضو مسجّل مسبقاً في الملف — لم تتم الإضافة.",
+                file: fileName,
+              });
+            }
+          }
+        }
+        // ────────────────────────────────────────────────────────────────────
+
+        // If the sheet is empty (no data at all), initialize it with the header row
         if (existingRows.length === 0) {
           ws = XLSX.default.utils.aoa_to_sheet([headers]);
           wb.Sheets[sheetName] = ws;
