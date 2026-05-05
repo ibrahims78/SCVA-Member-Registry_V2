@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نموذج تسجيل العضوية — الجمعية القلبية السورية</title>
-<meta name="description" content="سجّل بياناتك كعضو في الجمعية القلبية السورية">
+<title>نموذج تسجيل العضوية — الرابطة السورية لأمراض وجراحة القلب</title>
+<meta name="description" content="سجّل بياناتك كعضو في الرابطة السورية لأمراض وجراحة القلب">
 <style>
   :root {
     --bg-main: #0f2027;
@@ -81,10 +81,11 @@
   .light-mode .toolbar { background: rgba(255,255,255,0.9); }
   .logo { display: flex; align-items: center; gap: 12px; }
   .logo-icon {
-    width: 38px; height: 38px; border-radius: 50%;
-    background: var(--accent-light); border: 1px solid var(--accent);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 2px solid var(--accent);
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
   }
   .logo-text { font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
   .logo-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
@@ -223,16 +224,32 @@
     font-size: 15px; pointer-events: none;
   }
 
-  /* select arrow */
+  /* select arrow + solid background for native dropdown readability */
   .field select {
+    background-color: #1a2535;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: left 12px center;
     padding-left: 32px;
+    color-scheme: dark;
+  }
+  .field select option {
+    background-color: #1a2535;
+    color: #f0f4f8;
   }
   [dir="rtl"] .field select {
     background-position: right 12px center;
     padding-right: 32px; padding-left: 14px;
+  }
+  /* Light mode: override with bright backgrounds */
+  .light-mode .field select {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    color-scheme: light;
+  }
+  .light-mode .field select option {
+    background-color: #ffffff;
+    color: #0f172a;
   }
 
   /* ── Field Grid ── */
@@ -396,9 +413,9 @@
 <!-- ══════════════════════════════ TOOLBAR ══════════════════════════════ -->
 <div class="toolbar">
   <div class="logo">
-    <div class="logo-icon">❤️</div>
+    <img src="/logo.jpg" alt="SCVA Logo" class="logo-icon" />
     <div>
-      <div class="logo-text" id="logo-text">الجمعية القلبية السورية</div>
+      <div class="logo-text" id="logo-text">الرابطة السورية لأمراض وجراحة القلب</div>
       <div class="logo-sub">SCVA • Syrian Cardiovascular Association</div>
     </div>
   </div>
@@ -419,7 +436,7 @@
     <!-- Header -->
     <div class="form-header">
       <h1 id="hdr-title">نموذج طلب العضوية</h1>
-      <p id="hdr-sub">الجمعية القلبية السورية — عبّئ بياناتك بدقة لإتمام التسجيل</p>
+      <p id="hdr-sub">الرابطة السورية لأمراض وجراحة القلب — عبّئ بياناتك بدقة لإتمام التسجيل</p>
     </div>
 
     <!-- Progress -->
@@ -465,7 +482,7 @@
       <div class="verify-box">
         <div class="verify-icon">🎟️</div>
         <h3 id="vc-title">أدخل رمز الدعوة</h3>
-        <p id="vc-desc">احصل على رمز الدعوة من إدارة الجمعية القلبية السورية</p>
+        <p id="vc-desc">احصل على رمز الدعوة من إدارة الرابطة السورية لأمراض وجراحة القلب</p>
         <div class="code-input-wrap">
           <input type="text" id="code-input" autocomplete="off" spellcheck="false"
             placeholder="SCVA-2026" maxlength="30"
@@ -681,7 +698,7 @@
       <!-- Confirm checkbox -->
       <div class="confirm-check">
         <input type="checkbox" id="confirm-check" />
-        <label for="confirm-check" id="confirm-label">أؤكد أن البيانات المُدخَلة صحيحة ودقيقة وأوافق على مشاركتها مع إدارة الجمعية القلبية السورية.</label>
+        <label for="confirm-check" id="confirm-label">أؤكد أن البيانات المُدخَلة صحيحة ودقيقة وأوافق على مشاركتها مع إدارة الرابطة السورية لأمراض وجراحة القلب.</label>
       </div>
 
       <div class="alert alert-error" id="err-submit"></div>
@@ -740,9 +757,9 @@ const LOCKOUT_KEY = 'scva-lockout';
 // ── Translations ──
 const T = {
   ar: {
-    logoText: 'الجمعية القلبية السورية',
+    logoText: 'الرابطة السورية لأمراض وجراحة القلب',
     hdrTitle: 'نموذج طلب العضوية',
-    hdrSub: 'الجمعية القلبية السورية — عبّئ بياناتك بدقة لإتمام التسجيل',
+    hdrSub: 'الرابطة السورية لأمراض وجراحة القلب — عبّئ بياناتك بدقة لإتمام التسجيل',
     s1Title: 'التحقق من الهوية',
     s1Desc: 'أدخل رمز الدعوة الذي حصلت عليه من الجمعية للمتابعة.',
     s2Title: 'البيانات الأساسية',
@@ -752,7 +769,7 @@ const T = {
     s4Title: 'مراجعة وإرسال',
     s4Desc: 'راجع بياناتك بعناية قبل الإرسال النهائي.',
     vcTitle: 'أدخل رمز الدعوة',
-    vcDesc: 'احصل على رمز الدعوة من إدارة الجمعية القلبية السورية',
+    vcDesc: 'احصل على رمز الدعوة من إدارة الرابطة السورية لأمراض وجراحة القلب',
     btnVerify: 'التحقق والمتابعة',
     btnNext: 'التالي',
     btnBack: 'رجوع',
@@ -781,7 +798,7 @@ const T = {
     codeRequired: 'يُرجى إدخال رمز الدعوة',
     attemptsMsg: (n) => `تبقّى لديك ${n} محاولة${n===1?'':n===2?'تان':'ات'} قبل تجميد النموذج.`,
     lockoutText: 'تجاوزت عدد المحاولات المسموح بها. يُرجى المحاولة بعد:',
-    confirmLabel: 'أؤكد أن البيانات المُدخَلة صحيحة ودقيقة وأوافق على مشاركتها مع إدارة الجمعية القلبية السورية.',
+    confirmLabel: 'أؤكد أن البيانات المُدخَلة صحيحة ودقيقة وأوافق على مشاركتها مع إدارة الرابطة السورية لأمراض وجراحة القلب.',
     confirmRequired: 'يُرجى تأكيد صحة البيانات أولاً',
     webhookMissing: 'لم يتم تكوين نظام الاستقبال بعد. يُرجى التواصل مع إدارة الجمعية.',
     submitError: 'فشل إرسال البيانات. يُرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً.',
