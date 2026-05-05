@@ -784,6 +784,51 @@ export async function registerRoutes(
     }
   });
 
+  // ---------- Admin: Test AI API key ----------
+  app.post("/api/admin/test-ai", requireAdmin, async (req, res, next) => {
+    try {
+      const { provider, apiKey } = req.body as { provider?: string; apiKey?: string };
+      if (!provider || !apiKey || !apiKey.trim()) {
+        return res.status(400).json({ success: false, message: "المزود والمفتاح مطلوبان" });
+      }
+      const prompt = "قل جملة واحدة قصيرة تُؤكد أن مفتاح الـ API يعمل بشكل صحيح.";
+      let reply = "";
+      if (provider === "gemini") {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
+        const resp = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        });
+        if (!resp.ok) {
+          const err = (await resp.json().catch(() => ({}))) as Record<string, any>;
+          return res.json({ success: false, message: err?.error?.message || `HTTP ${resp.status}` });
+        }
+        const json = (await resp.json()) as Record<string, any>;
+        reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+      } else {
+        const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey.trim()}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 60,
+          }),
+        });
+        if (!resp.ok) {
+          const err = (await resp.json().catch(() => ({}))) as Record<string, any>;
+          return res.json({ success: false, message: err?.error?.message || `HTTP ${resp.status}` });
+        }
+        const json = (await resp.json()) as Record<string, any>;
+        reply = json?.choices?.[0]?.message?.content?.trim() || "";
+      }
+      res.json({ success: true, message: reply || "المفتاح يعمل بشكل صحيح ✅" });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // ---------- Form Settings (admin only) ----------
   app.get("/api/form-settings", requireAdmin, async (_req, res, next) => {
     try {
@@ -850,7 +895,16 @@ export async function registerRoutes(
           }
         }
 
-        // 4. HTTP append node — inject app URL and API key
+        // 4. AI node — inject provider and API key as literal constants
+        if (node.id === "ai-analysis" && node.parameters?.jsCode) {
+          const aiProvider = settings.aiProvider || "openai";
+          const aiApiKey = settings.aiApiKey || "";
+          node.parameters.jsCode = node.parameters.jsCode
+            .replace("'__SCVA_AI_PROVIDER__'", `'${aiProvider}'`)
+            .replace("'__SCVA_AI_KEY__'", `'${aiApiKey}'`);
+        }
+
+        // 5. HTTP append node — inject app URL and API key
         if (node.id === "append-excel-http" && node.parameters) {
           const appUrl = process.env.REPLIT_DEV_DOMAIN
             ? `https://${process.env.REPLIT_DEV_DOMAIN}`
@@ -874,6 +928,8 @@ export async function registerRoutes(
           adminEmail: adminEmail || "(not set)",
           verificationCode: verificationCode,
           apiKey: settings.apiKey ? "✅ مُضمَّن" : "(not set)",
+          aiProvider: settings.aiProvider || "openai",
+          aiEnabled: settings.aiApiKey ? "✅ مفعَّل" : "❌ غير مُفعَّل",
           appUrl: process.env.REPLIT_DEV_DOMAIN
             ? `https://${process.env.REPLIT_DEV_DOMAIN}`
             : "(not set)",

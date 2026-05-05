@@ -24,10 +24,10 @@ import {
   Loader2, UserPlus, Pencil, Trash2, ShieldCheck,
   FileSpreadsheet, Download, Upload, DatabaseBackup,
   CheckCircle2, AlertCircle, X, Receipt,
-  Link2, Mail, KeyRound, Eye, EyeOff, Copy, ClipboardCheck, Workflow,
+  Link2, Mail, KeyRound, Eye, EyeOff, Copy, ClipboardCheck, Workflow, Sparkles,
 } from "lucide-react";
 import { MEMBER_COLUMNS, SUBSCRIPTION_COLUMNS, buildHeaderIndex } from "@/lib/importColumns";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { z } from "zod";
 import * as XLSX from "xlsx";
 
@@ -213,6 +213,12 @@ export default function Settings() {
   const [formUrlCopied, setFormUrlCopied] = useState(false);
   const [isDownloadingArExcel, setIsDownloadingArExcel] = useState(false);
   const [isDownloadingEnExcel, setIsDownloadingEnExcel] = useState(false);
+  const [aiProvider, setAiProvider] = useState<"openai" | "gemini">("openai");
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [showAiKey, setShowAiKey] = useState(false);
+  const [isTestingAi, setIsTestingAi] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [isSavingAiSettings, setIsSavingAiSettings] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -223,6 +229,13 @@ export default function Settings() {
   const { data: formSettingsData, isLoading: isLoadingFormSettings } = useQuery<FormSettings>({
     queryKey: ["/api/form-settings"],
   });
+
+  useEffect(() => {
+    if (formSettingsData) {
+      setAiProvider((formSettingsData.aiProvider as "openai" | "gemini") || "openai");
+      setAiApiKey(formSettingsData.aiApiKey || "");
+    }
+  }, [formSettingsData]);
 
   const formSettingsForm = useForm({
     resolver: zodResolver(insertFormSettingsSchema),
@@ -291,6 +304,45 @@ export default function Settings() {
       toast({ title: isAr ? "خطأ في التحميل" : "Download failed", variant: "destructive" });
     } finally {
       setter(false);
+    }
+  };
+
+  const handleTestAi = async () => {
+    if (!aiApiKey.trim()) {
+      toast({
+        title: isAr ? "مطلوب" : "Required",
+        description: isAr ? "يرجى إدخال مفتاح API أولاً" : "Please enter an API key first",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsTestingAi(true);
+    setAiTestResult(null);
+    try {
+      const res = await apiRequest("POST", "/api/admin/test-ai", { provider: aiProvider, apiKey: aiApiKey });
+      const data = await res.json() as { success: boolean; message: string };
+      setAiTestResult(data);
+    } catch {
+      setAiTestResult({ success: false, message: isAr ? "فشل الاتصال بالخادم" : "Failed to connect to server" });
+    } finally {
+      setIsTestingAi(false);
+    }
+  };
+
+  const handleSaveAiSettings = async () => {
+    setIsSavingAiSettings(true);
+    try {
+      const res = await apiRequest("PUT", "/api/form-settings", { aiProvider, aiApiKey });
+      if (!res.ok) throw new Error(isAr ? "فشل الحفظ" : "Save failed");
+      await queryClient.invalidateQueries({ queryKey: ["/api/form-settings"] });
+      toast({
+        title: isAr ? "تم الحفظ" : "Saved",
+        description: isAr ? "تم حفظ إعدادات الذكاء الاصطناعي بنجاح. حمّل ملف Workflow مجدداً لتضمين المفتاح." : "AI settings saved. Re-download the Workflow file to embed the key.",
+      });
+    } catch {
+      toast({ title: isAr ? "خطأ في الحفظ" : "Save failed", variant: "destructive" });
+    } finally {
+      setIsSavingAiSettings(false);
     }
   };
 
@@ -1400,6 +1452,180 @@ export default function Settings() {
                 {isDownloadingWorkflow ? (isAr ? "جارٍ التحميل..." : "Downloading...") : L.dlWorkflowBtn}
               </Button>
             </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ===== AI Settings ===== */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">
+                {isAr ? "إعدادات الذكاء الاصطناعي" : "AI Settings"}
+              </CardTitle>
+              <CardDescription>
+                {isAr
+                  ? "أدخل مفتاح API لتفعيل التحليل الذكي للطلبات وكتابة رسائل ترحيب احترافية للأعضاء."
+                  : "Enter an API key to enable smart analysis of applications and professional welcome emails."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {isLoadingFormSettings ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {isAr ? "جارٍ التحميل..." : "Loading..."}
+            </div>
+          ) : (
+            <>
+              {/* Provider selector */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  {isAr ? "مزوّد الذكاء الاصطناعي" : "AI Provider"}
+                </Label>
+                <Select
+                  value={aiProvider}
+                  onValueChange={(v) => {
+                    setAiProvider(v as "openai" | "gemini");
+                    setAiTestResult(null);
+                  }}
+                >
+                  <SelectTrigger className="w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="openai">
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">OpenAI</span>
+                        <span className="text-xs text-muted-foreground">gpt-4o-mini</span>
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="gemini">
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">Google Gemini</span>
+                        <span className="text-xs text-muted-foreground">gemini-2.0-flash</span>
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* API Key input */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <KeyRound className="h-3.5 w-3.5 text-primary" />
+                  {isAr ? "مفتاح API" : "API Key"}
+                </Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type={showAiKey ? "text" : "password"}
+                      value={aiApiKey}
+                      onChange={(e) => {
+                        setAiApiKey(e.target.value);
+                        setAiTestResult(null);
+                      }}
+                      placeholder={
+                        aiProvider === "openai"
+                          ? "sk-proj-..."
+                          : "AIzaSy..."
+                      }
+                      dir="ltr"
+                      className="pe-10 font-mono text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAiKey((v) => !v)}
+                      className="absolute inset-y-0 end-2 flex items-center px-1 text-muted-foreground hover:text-foreground"
+                      tabIndex={-1}
+                    >
+                      {showAiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {aiProvider === "openai"
+                    ? (isAr ? "احصل على المفتاح من: platform.openai.com/api-keys" : "Get your key from: platform.openai.com/api-keys")
+                    : (isAr ? "احصل على المفتاح من: aistudio.google.com/app/apikey" : "Get your key from: aistudio.google.com/app/apikey")}
+                </p>
+              </div>
+
+              {/* Test button + result */}
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleTestAi}
+                  disabled={isTestingAi || !aiApiKey.trim()}
+                >
+                  {isTestingAi ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {isTestingAi
+                    ? (isAr ? "جارٍ الاختبار..." : "Testing...")
+                    : (isAr ? "اختبار المفتاح" : "Test API Key")}
+                </Button>
+
+                {aiTestResult && (
+                  <div className={`rounded-md border px-4 py-3 text-sm flex items-start gap-2.5 ${
+                    aiTestResult.success
+                      ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
+                      : "border-destructive/30 bg-destructive/5 text-destructive"
+                  }`}>
+                    {aiTestResult.success
+                      ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+                      : <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />}
+                    <div>
+                      <p className="font-medium text-xs mb-0.5">
+                        {aiTestResult.success
+                          ? (isAr ? "✅ المفتاح يعمل بشكل صحيح" : "✅ API key is working")
+                          : (isAr ? "❌ فشل الاختبار" : "❌ Test failed")}
+                      </p>
+                      <p className="text-xs opacity-80">{aiTestResult.message}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* How it works info */}
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  {isAr ? "كيف يعمل؟" : "How it works"}
+                </p>
+                <ul className="space-y-1.5 list-disc list-inside">
+                  <li>{isAr ? "عند استلام طلب عضوية جديد، يحلّل الـ AI بيانات الطلب ويكتب ملاحظات للمسؤول." : "When a new membership request arrives, AI analyses the data and writes admin notes."}</li>
+                  <li>{isAr ? "يُولَّد أيضاً رسالة ترحيب شخصية ترسَل للعضو تلقائياً عبر البريد الإلكتروني." : "A personalised welcome message is also generated and sent to the member automatically."}</li>
+                  <li>{isAr ? "المفتاح يُحقَن تلقائياً في ملف Workflow عند تحميله — لا تعديل يدوي في n8n." : "The key is automatically injected into the Workflow file on download — no manual edits in n8n."}</li>
+                  <li>{isAr ? "الخدمة اختيارية: الـ workflow يعمل بشكل طبيعي حتى بدون مفتاح AI." : "The service is optional: the workflow works normally even without an AI key."}</li>
+                </ul>
+              </div>
+
+              {/* Save button */}
+              <Button
+                onClick={handleSaveAiSettings}
+                disabled={isSavingAiSettings}
+                className="gap-2"
+              >
+                {isSavingAiSettings ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                {isSavingAiSettings
+                  ? (isAr ? "جارٍ الحفظ..." : "Saving...")
+                  : (isAr ? "حفظ إعدادات الذكاء الاصطناعي" : "Save AI settings")}
+              </Button>
             </>
           )}
         </CardContent>

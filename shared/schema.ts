@@ -48,6 +48,8 @@ export const formSettings = pgTable("form_settings", {
   arExcelPath: text("ar_excel_path").notNull().default(""),
   enExcelPath: text("en_excel_path").notNull().default(""),
   apiKey: text("api_key").notNull().default(""),
+  aiProvider: text("ai_provider").notNull().default("openai"),
+  aiApiKey: text("ai_api_key").notNull().default(""),
 });
 
 export const genderEnum = z.enum(["male", "female"]);
@@ -114,6 +116,8 @@ export const insertFormSettingsSchema = z.object({
   verificationCode: z.string().min(4, "رمز الدعوة يجب أن يكون 4 أحرف على الأقل").optional(),
   arExcelPath: z.string().optional(),
   enExcelPath: z.string().optional(),
+  aiProvider: z.enum(["openai", "gemini"]).optional(),
+  aiApiKey: z.string().optional(),
 });
 
 export type FormSettings = typeof formSettings.$inferSelect;

@@ -91,7 +91,16 @@ Preferred communication style: Simple, everyday language (Arabic).
 
 A full Arabic code review and a phase-by-phase remediation log are at `docs/CODE_REVIEW.md` (security, TypeScript, performance, code quality, architecture).
 
-## تغييرات الإصدار الأخير (v2.0 — n8n HTTP API)
+## تغييرات الإصدار الأخير (v2.5 — AI Integration)
+
+- **حقل aiProvider + aiApiKey**: مضافان لجدول `form_settings` — يخزّنان مزوّد AI والمفتاح.
+- **Endpoint جديد**: `POST /api/admin/test-ai` — يختبر صلاحية مفتاح API لـ OpenAI أو Gemini قبل الحفظ.
+- **حقن AI في Workflow**: عند تحميل الـ Workflow، يُحقَن مفتاح AI ومزوّده تلقائياً في عقدة `ai-analysis`.
+- **دعم مزدوج**: Workflow يدعم OpenAI (gpt-4o-mini) وGoogle Gemini (gemini-2.0-flash) بنفس الكود.
+- **صفحة الإعدادات**: بطاقة جديدة "إعدادات الذكاء الاصطناعي" مع اختيار المزوّد، إدخال المفتاح، زر الاختبار، وزر الحفظ.
+- **Workflow v2.4**: عقدة AI تستخدم placeholders (`__SCVA_AI_PROVIDER__`, `__SCVA_AI_KEY__`) تُستبدَل عند التحميل.
+
+## تغييرات الإصدار (v2.0 — n8n HTTP API)
 
 - **الهيكل الجديد**: n8n يرسل بيانات الأعضاء عبر HTTP مباشرةً إلى سيرفر SCVA بدلاً من قراءة/كتابة ملفات من Disk.
 - **Endpoint جديد**: `POST /api/public/append-excel` — يستقبل بيانات العضو ويكتبها في ملف Excel المناسب (عربي أو إنجليزي). مؤمَّن بـ Bearer token (apiKey).
