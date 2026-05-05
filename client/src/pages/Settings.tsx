@@ -1510,7 +1510,7 @@ export default function Settings() {
                     <SelectItem value="gemini">
                       <span className="flex items-center gap-2">
                         <span className="font-medium">Google Gemini</span>
-                        <span className="text-xs text-muted-foreground">gemini-2.0-flash</span>
+                        <span className="text-xs text-muted-foreground">gemini-2.5-flash</span>
                       </span>
                     </SelectItem>
                   </SelectContent>

@@ -794,7 +794,7 @@ export async function registerRoutes(
       const prompt = "قل جملة واحدة قصيرة تُؤكد أن مفتاح الـ API يعمل بشكل صحيح.";
       let reply = "";
       if (provider === "gemini") {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey.trim()}`;
         const resp = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
