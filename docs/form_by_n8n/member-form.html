@@ -401,10 +401,72 @@
     .progress-bar { padding: 16px 16px 12px; }
   }
 
+  /* ── Print Document (hidden on screen, shown only when printing) ── */
+  #print-doc { display: none; }
+
   @media print {
-    .toolbar, .btn-row, .success-actions { display: none !important; }
-    body { background: white !important; color: black !important; }
-    .form-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+    @page { size: A4; margin: 14mm 18mm; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+
+    /* Hide all screen content */
+    .toolbar, .container { display: none !important; }
+
+    /* Show the print document */
+    #print-doc {
+      display: block !important;
+      font-family: 'Segoe UI', 'Noto Sans Arabic', Tahoma, Arial, sans-serif;
+      color: #1a202c;
+      direction: rtl;
+      font-size: 11pt;
+    }
+
+    /* ── Print Header ── */
+    .ph-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+    .ph-logo {
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      border: 2px solid #06b6d4;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .ph-info { flex: 1; }
+    .ph-name-ar { font-size: 15pt; font-weight: 700; color: #0f2027; line-height: 1.3; }
+    .ph-name-en { font-size: 9pt; color: #64748b; margin-top: 2px; }
+    .ph-hr { border: none; border-top: 2.5px solid #0f2027; margin: 10px 0 6px; }
+    .ph-doc-title { font-size: 13pt; font-weight: 700; text-align: center; color: #0f2027; margin-bottom: 1px; }
+    .ph-doc-sub   { font-size: 9pt; text-align: center; color: #64748b; margin-bottom: 14px; }
+
+    /* ── Print Section ── */
+    .ps-wrap { margin-bottom: 12px; break-inside: avoid; }
+    .ps-title {
+      font-size: 9pt; font-weight: 700; color: #06b6d4;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 3px; margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .pt { width: 100%; border-collapse: collapse; }
+    .pt tr:nth-child(even) td { background: #f8fafc; }
+    .pt td {
+      padding: 5px 8px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+      font-size: 10pt;
+    }
+    .pt td:first-child { width: 36%; color: #64748b; font-weight: 600; }
+    .pt td:last-child  { color: #1e293b; font-weight: 500; }
+
+    /* ── Print Footer ── */
+    .pf-hr { border: none; border-top: 1px solid #e2e8f0; margin-top: 14px; padding-top: 8px; }
+    .pf-line {
+      display: flex; justify-content: space-between;
+      font-size: 8.5pt; color: #94a3b8;
+    }
+    .pf-org { text-align: center; font-size: 9pt; font-weight: 600; color: #0f2027; margin-top: 4px; }
   }
 </style>
 </head>
@@ -733,6 +795,33 @@
 
   </div><!-- /form-card -->
 </div><!-- /container -->
+
+<!-- ══════════════════════════════ PRINT DOCUMENT ══════════════════════════════ -->
+<div id="print-doc">
+  <!-- Header -->
+  <div class="ph-wrap">
+    <img src="/logo.jpg" alt="SCVA" class="ph-logo" />
+    <div class="ph-info">
+      <div class="ph-name-ar">الرابطة السورية لأمراض وجراحة القلب</div>
+      <div class="ph-name-en">Syrian Cardiovascular Association — SCVA</div>
+    </div>
+  </div>
+  <hr class="ph-hr" />
+  <div class="ph-doc-title">وثيقة تأكيد طلب العضوية</div>
+  <div class="ph-doc-sub">Membership Application Confirmation</div>
+
+  <!-- Sections (populated by JS) -->
+  <div id="print-sections"></div>
+
+  <!-- Footer -->
+  <div class="pf-hr">
+    <div class="pf-line">
+      <span id="print-ref"></span>
+      <span id="print-datetime"></span>
+    </div>
+    <div class="pf-org">الرابطة السورية لأمراض وجراحة القلب — Syrian Cardiovascular Association</div>
+  </div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -1364,6 +1453,69 @@ function showSuccess(data) {
   document.getElementById('summary-rows').innerHTML = rows.map(([k,v]) =>
     `<div class="summary-row"><span class="summary-label">${k}</span><span class="summary-val">${v}</span></div>`
   ).join('');
+
+  populatePrintDoc(data);
+}
+
+function populatePrintDoc(data) {
+  const L = T[currentLang];
+  const isAr = currentLang === 'ar';
+  const gMap = { male: L.genderMale, female: L.genderFemale };
+  const sMap = { cardiology: L.cardiology, cardiac_surgery: L.cardiac_surgery };
+  const mMap = { original: L.original, associate: L.associate };
+
+  const sections = [
+    {
+      title: isAr ? 'البيانات الشخصية' : 'Personal Information',
+      rows: [
+        [L.lblFn,       data.firstName],
+        [L.lblLn,       data.lastName],
+        [L.lblFullname, data.fullName],
+        [L.lblEnName,   data.englishName],
+        [L.lblFather,   data.fatherName],
+        [L.lblDob,      data.birthDate],
+        [L.lblGender,   gMap[data.gender] || data.gender],
+      ]
+    },
+    {
+      title: isAr ? 'البيانات المهنية' : 'Professional Information',
+      rows: [
+        [L.lblSpecialty, sMap[data.specialty] || data.specialty],
+        [L.lblMtype,     mMap[data.membershipType] || data.membershipType],
+        [L.lblJoindate,  data.joinDate],
+        [L.lblEsc,       data.escId],
+      ]
+    },
+    {
+      title: isAr ? 'بيانات التواصل' : 'Contact Information',
+      rows: [
+        [L.lblEmail, data.email],
+        [L.lblPhone, data.phone],
+        [L.lblCity,  data.city],
+        [L.lblWork,  data.workAddress],
+      ]
+    }
+  ];
+
+  let html = '';
+  for (const sec of sections) {
+    const filtered = sec.rows.filter(([, v]) => v);
+    if (!filtered.length) continue;
+    html += `<div class="ps-wrap"><div class="ps-title">${sec.title}</div><table class="pt">`;
+    for (const [label, value] of filtered) {
+      html += `<tr><td>${label}</td><td>${value}</td></tr>`;
+    }
+    html += `</table></div>`;
+  }
+  document.getElementById('print-sections').innerHTML = html;
+
+  const ts = new Date(data.submittedAt);
+  document.getElementById('print-datetime').textContent =
+    (isAr ? 'تاريخ الإرسال: ' : 'Submitted: ') +
+    ts.toLocaleString(isAr ? 'ar-SY' : 'en-GB');
+  const refNum = data.submittedAt ? ts.getTime().toString().slice(-8) : Date.now().toString().slice(-8);
+  document.getElementById('print-ref').textContent =
+    (isAr ? 'رقم الطلب: ' : 'Ref: ') + refNum;
 }
 
 function resetForm() {
