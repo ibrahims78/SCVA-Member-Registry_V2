@@ -794,18 +794,43 @@ export async function registerRoutes(
       const prompt = "قل جملة واحدة قصيرة تُؤكد أن مفتاح الـ API يعمل بشكل صحيح.";
       let reply = "";
       if (provider === "gemini") {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey.trim()}`;
-        const resp = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        });
-        if (!resp.ok) {
-          const err = (await resp.json().catch(() => ({}))) as Record<string, any>;
-          return res.json({ success: false, message: err?.error?.message || `HTTP ${resp.status}` });
+        // جرّب النماذج بالترتيب حتى ينجح أحدها
+        const geminiModels = [
+          "gemini-2.5-flash-preview-04-17",
+          "gemini-2.5-flash",
+          "gemini-2.0-flash-001",
+          "gemini-1.5-flash",
+        ];
+        let lastErrMsg = "";
+        let succeeded = false;
+        let usedModel = "";
+        for (const model of geminiModels) {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+          const resp = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          });
+          if (resp.ok) {
+            const json = (await resp.json()) as Record<string, any>;
+            reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+            usedModel = model;
+            succeeded = true;
+            break;
+          }
+          const errData = (await resp.json().catch(() => ({}))) as Record<string, any>;
+          lastErrMsg = errData?.error?.message || `HTTP ${resp.status}`;
+          // إن كان الخطأ "نموذج غير متاح" جرّب التالي، وإلا توقّف (مفتاح خاطئ، حصة منتهية...)
+          const isModelUnavailable =
+            resp.status === 404 ||
+            /no longer available|not found|not supported/i.test(lastErrMsg);
+          if (!isModelUnavailable) break;
         }
-        const json = (await resp.json()) as Record<string, any>;
-        reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+        if (!succeeded) {
+          return res.json({ success: false, message: lastErrMsg || "لا يوجد نموذج Gemini متاح لهذا المفتاح." });
+        }
+        const modelLabel = usedModel.includes("2.5") ? "Gemini 2.5 Flash" : usedModel.includes("2.0") ? "Gemini 2.0 Flash" : "Gemini 1.5 Flash";
+        return res.json({ success: true, message: `${reply || "✅ المفتاح يعمل"} — (${modelLabel})` });
       } else {
         const resp = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
