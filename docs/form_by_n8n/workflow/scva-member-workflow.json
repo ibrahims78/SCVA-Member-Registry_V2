@@ -243,7 +243,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Build Email Data v3.5 — generates complete email bodies as plain strings\n// so email nodes only need a simple {{ $json.adminEmailBody }} expression.\nconst d = $('AI — تحليل الطلب').first().json;\nconst v = (val) => (val && String(val).trim()) ? String(val).trim() : '—';\n\nfunction fmtDate(iso) {\n  try {\n    const dt = new Date(iso);\n    if (isNaN(dt.getTime())) return iso || '—';\n    const pad = n => String(n).padStart(2, '0');\n    return pad(dt.getDate()) + '/' + pad(dt.getMonth() + 1) + '/' + dt.getFullYear()\n         + '  ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());\n  } catch (e) { return iso || '—'; }\n}\n\nconst lang        = d.language || 'ar';\nconst isAr        = lang !== 'en';\nconst fullName    = v(d.fullName);\nconst englishName = v(d.englishName);\nconst specialty   = v(d.specialty);\nconst membership  = v(d.membershipType);\nconst email       = d.email || '';\nconst phone       = v(d.phone);\nconst city        = v(d.city);\nconst gender      = v(d.gender);\nconst birthDate   = v(d.birthDate);\nconst joinDate    = v(d.joinDate);\nconst escId       = v(d.escId);\nconst workAddress = v(d.workAddress);\nconst submittedAt = fmtDate(d.submittedAt || new Date().toISOString());\nconst aiAnalysis  = d.aiAnalysis || '';\nconst aiWelcome   = d.aiWelcome  || '';\n\n// ── Admin notification body (Arabic) ──────────────────────────────\nlet adminLines = [];\nadminLines.push('الرابطة السورية لأمراض وجراحة القلب — SCVA');\nadminLines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');\nadminLines.push('طلب عضوية جديد');\nadminLines.push('');\nadminLines.push('الاسم الكامل : ' + fullName);\nadminLines.push('الاسم بالإنجليزية : ' + englishName);\nadminLines.push('الجنس : ' + gender);\nadminLines.push('تاريخ الميلاد : ' + birthDate);\nadminLines.push('التخصص : ' + specialty);\nadminLines.push('نوع العضوية : ' + membership);\nadminLines.push('البريد الإلكتروني : ' + (email || '—'));\nadminLines.push('رقم الهاتف : ' + phone);\nadminLines.push('المدينة : ' + city);\nadminLines.push('مكان العمل : ' + workAddress);\nadminLines.push('رقم ESC : ' + escId);\nadminLines.push('تاريخ التقديم : ' + submittedAt);\nif (aiAnalysis) {\n  adminLines.push('');\n  adminLines.push('تحليل الذكاء الاصطناعي:');\n  adminLines.push(aiAnalysis);\n}\nadminLines.push('');\nadminLines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');\nadminLines.push('SCVA Workflow v3.5.0');\nconst adminEmailBody = adminLines.join('\\n');\n\n// ── Member confirmation body ────────────────────────────────────\nlet memberLines = [];\nif (isAr) {\n  memberLines.push('عزيزي الدكتور/ة ' + fullName + '،');\n  memberLines.push('');\n  memberLines.push('تم استلام طلب انضمامك للرابطة السورية لأمراض وجراحة القلب بنجاح.');\n  memberLines.push('سيتواصل معك فريقنا قريباً للمتابعة.');\n  if (aiWelcome) { memberLines.push(''); memberLines.push(aiWelcome); }\n  memberLines.push('');\n  memberLines.push('نوع العضوية : ' + membership);\n  memberLines.push('التخصص     : ' + specialty);\n  memberLines.push('');\n  memberLines.push('مع تحيات الرابطة السورية لأمراض وجراحة القلب');\n  memberLines.push('SCVA - Syrian Cardiovascular Association');\n} else {\n  memberLines.push('Dear Dr. ' + englishName + ',');\n  memberLines.push('');\n  memberLines.push('Your membership application to the Syrian Cardiovascular Association (SCVA) has been received successfully.');\n  memberLines.push('Our team will contact you soon.');\n  if (aiWelcome) { memberLines.push(''); memberLines.push(aiWelcome); }\n  memberLines.push('');\n  memberLines.push('Membership Type : ' + membership);\n  memberLines.push('Specialty       : ' + specialty);\n  memberLines.push('');\n  memberLines.push('Best regards,');\n  memberLines.push('SCVA - Syrian Cardiovascular Association');\n}\nconst memberEmailBody = memberLines.join('\\n');\n\nreturn [{\n  json: {\n    language:         lang,\n    firstName:        v(d.firstName),\n    lastName:         v(d.lastName),\n    fullName,\n    fatherName:       v(d.fatherName),\n    englishName,\n    birthDate,\n    gender,\n    specialty,\n    membershipType:   membership,\n    joinDate,\n    escId,\n    email,\n    phone,\n    city,\n    workAddress,\n    submittedAt,\n    aiAnalysis,\n    aiWelcome,\n    memberEmail:      email,\n    adminEmailBody,\n    memberEmailBody,\n  }\n}];"
+        "jsCode": "// Build Email Data v3.6 — robust with English node ref + full try-catch\n// Reads from 'AI Analysis' node (English name = no Unicode encoding issues)\n// Falls back to Format & Validate Data if AI node data missing\n\nlet d = {};\ntry {\n  const aiData = $('AI Analysis').first().json;\n  if (aiData && typeof aiData === 'object') d = aiData;\n} catch(e1) {\n  try {\n    const fmtData = $('Format & Validate Data').first().json;\n    if (fmtData && typeof fmtData === 'object') d = fmtData;\n  } catch(e2) {\n    d = {};\n  }\n}\n\nconst v = (val) => (val && String(val).trim()) ? String(val).trim() : '—';\n\nfunction fmtDate(iso) {\n  try {\n    const dt = new Date(iso);\n    if (isNaN(dt.getTime())) return iso || '—';\n    const pad = n => String(n).padStart(2, '0');\n    return pad(dt.getDate()) + '/' + pad(dt.getMonth() + 1) + '/' + dt.getFullYear()\n         + '  ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());\n  } catch(e) { return iso || '—'; }\n}\n\nconst lang        = d.language || 'ar';\nconst isAr        = lang !== 'en';\nconst fullName    = v(d.fullName);\nconst englishName = v(d.englishName);\nconst specialty   = v(d.specialty);\nconst membership  = v(d.membershipType);\nconst email       = d.email || '';\nconst phone       = v(d.phone);\nconst city        = v(d.city);\nconst gender      = v(d.gender);\nconst birthDate   = v(d.birthDate);\nconst joinDate    = v(d.joinDate);\nconst escId       = v(d.escId);\nconst workAddress = v(d.workAddress);\nconst submittedAt = fmtDate(d.submittedAt || new Date().toISOString());\nconst aiAnalysis  = d.aiAnalysis  || '';\nconst aiWelcome   = d.aiWelcome   || '';\n\n// Admin email body\nconst adminLines = [\n  'الرابطة السورية لأمراض وجراحة القلب — SCVA',\n  '----------------------------------------',\n  'طلب عضوية جديد',\n  '',\n  'الاسم الكامل        : ' + fullName,\n  'الاسم بالانجليزية  : ' + englishName,\n  'الجنس              : ' + gender,\n  'تاريخ الميلاد      : ' + birthDate,\n  'التخصص             : ' + specialty,\n  'نوع العضوية        : ' + membership,\n  'البريد الالكتروني  : ' + (email || '—'),\n  'رقم الهاتف         : ' + phone,\n  'المدينة            : ' + city,\n  'مكان العمل         : ' + workAddress,\n  'رقم ESC            : ' + escId,\n  'تاريخ التقديم      : ' + submittedAt,\n];\nif (aiAnalysis) {\n  adminLines.push('');\n  adminLines.push('تحليل الذكاء الاصطناعي:');\n  adminLines.push(aiAnalysis);\n}\nadminLines.push('');\nadminLines.push('----------------------------------------');\nadminLines.push('SCVA Workflow v3.6.0');\nconst adminEmailBody = adminLines.join('\n');\n\n// Member confirmation body\nconst memberLines = isAr ? [\n  'عزيزي الدكتور/ة ' + fullName + '،',\n  '',\n  'تم استلام طلب انضمامك للرابطة السورية لامراض وجراحة القلب بنجاح.',\n  'سيتواصل معك فريقنا قريبا للمتابعة.',\n  ...(aiWelcome ? ['', aiWelcome] : []),\n  '',\n  'نوع العضوية : ' + membership,\n  'التخصص     : ' + specialty,\n  '',\n  'مع تحيات الرابطة السورية لامراض وجراحة القلب',\n  'SCVA - Syrian Cardiovascular Association',\n] : [\n  'Dear Dr. ' + englishName + ',',\n  '',\n  'Your membership application to the Syrian Cardiovascular Association (SCVA) has been received successfully.',\n  'Our team will contact you soon.',\n  ...(aiWelcome ? ['', aiWelcome] : []),\n  '',\n  'Membership Type : ' + membership,\n  'Specialty       : ' + specialty,\n  '',\n  'Best regards,',\n  'SCVA - Syrian Cardiovascular Association',\n];\nconst memberEmailBody = memberLines.join('\n');\n\nreturn [{\n  json: {\n    language: lang,\n    firstName: v(d.firstName),\n    lastName: v(d.lastName),\n    fullName,\n    fatherName: v(d.fatherName),\n    englishName,\n    birthDate,\n    gender,\n    specialty,\n    membershipType: membership,\n    joinDate,\n    escId,\n    email,\n    phone,\n    city,\n    workAddress,\n    submittedAt,\n    aiAnalysis,\n    aiWelcome,\n    memberEmail: email,\n    adminEmailBody,\n    memberEmailBody,\n  }\n}];"
       },
       "id": "build-email-html",
       "name": "Build Email HTML",
@@ -256,7 +256,7 @@
     },
     {
       "id": "ai-analysis",
-      "name": "AI — تحليل الطلب",
+      "name": "AI Analysis",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -295,18 +295,7 @@
       "main": [
         [
           {
-            "node": "AI — تحليل الطلب",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI — تحليل الطلب": {
-      "main": [
-        [
-          {
-            "node": "Append to SCVA Excel (HTTP)",
+            "node": "AI Analysis",
             "type": "main",
             "index": 0
           }
@@ -394,7 +383,18 @@
       ]
     },
     "Respond — Duplicate": {},
-    "Respond — 200 Success": {}
+    "Respond — 200 Success": {},
+    "AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Append to SCVA Excel (HTTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "settings": {
     "executionOrder": "v1",
@@ -411,11 +411,11 @@
   ],
   "triggerCount": 0,
   "updatedAt": "2026-05-05T20:58:43.178Z",
-  "versionId": "scva-v3.5",
+  "versionId": "scva-v3.6",
   "__meta": {
     "description": "SCVA Member Registration Workflow v3.5.0 — يستقبل بيانات الأعضاء من نموذج HTML الخارجي، يتحقق من رمز الدعوة، يحفظ البيانات مباشرة في ملفات الإكسل على سيرفر SCVA عبر HTTP Request، ويُرسل إشعارات بريدية احترافية.",
-    "version": "3.5.0",
-    "changelog": "v3.5: RADICAL FIX — email bodies now built entirely in JS Code node (Build Email HTML) and stored as plain strings adminEmailBody/memberEmailBody. Email nodes use only {{ $json.adminEmailBody }} — no complex expressions, guaranteed non-empty.",
+    "version": "3.6.0",
+    "changelog": "v3.6: ROOT CAUSE FIX — renamed Arabic AI node to English (AI Analysis) to eliminate Unicode node-reference failure; added try-catch with Format & Validate Data fallback; removed special Unicode chars from email body",
     "createdAt": "2026-05-04",
     "setupSteps": [
       "ما يُدمج تلقائياً عند التحميل من التطبيق:",
