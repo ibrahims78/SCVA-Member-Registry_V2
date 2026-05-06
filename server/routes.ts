@@ -921,7 +921,7 @@ export async function registerRoutes(
         }
 
         // 4. AI node — inject provider and API key as literal constants
-        if (node.id === "ai-analysis" && node.parameters?.jsCode) {
+        if (node.id === "build-ai-prompt" && node.parameters?.jsCode) {
           const aiProvider = settings.aiProvider || "openai";
           const aiApiKey = settings.aiApiKey || "";
           node.parameters.jsCode = node.parameters.jsCode
