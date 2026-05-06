@@ -92,7 +92,7 @@
         "toEmail": "={{ $vars.SCVA_ADMIN_EMAIL || 'admin@scva.org' }}",
         "subject": "={{ 'عضو جديد: ' + ($json['fullName'] || $json['englishName'] || '—') + ' | الرابطة السورية لأمراض وجراحة القلب' }}",
         "emailType": "text",
-        "message": "={{ [\n  '== SCVA Workflow v3.3.0 ==',\n  '',\n  'عضو جديد:',\n  'الاسم: ' + $json['fullName'],\n  'التخصص: ' + $json['specialty'],\n  'نوع العضوية: ' + $json['membershipType'],\n  'البريد: ' + $json['email'],\n  'الهاتف: ' + $json['phone'],\n  'المدينة: ' + $json['city'],\n  '',\n  $json['aiAnalysis'] ? ('تحليل AI: ' + $json['aiAnalysis']) : '',\n  '',\n  'SCVA - Syrian Cardiovascular Association'\n].join('\\n') }}",
+        "message": "=={{ '== SCVA Workflow v3.4.0 ==' + '\\n' + '' + '\\n' + 'عضو جديد:' + '\\n' + 'الاسم: ' + ($json['fullName'] || '—') + '\\n' + 'التخصص: ' + ($json['specialty'] || '—') + '\\n' + 'نوع العضوية: ' + ($json['membershipType'] || '—') + '\\n' + 'البريد: ' + ($json['email'] || '—') + '\\n' + 'الهاتف: ' + ($json['phone'] || '—') + '\\n' + 'المدينة: ' + ($json['city'] || '—') + '\\n' + 'تاريخ التقديم: ' + ($json['submittedAt'] || '—') + '\\n' + ($json['aiAnalysis'] ? ('\\n' + 'تحليل AI: ' + $json['aiAnalysis'] + '\\n') : '') + '\\n' + 'SCVA - Syrian Cardiovascular Association' }}",
         "options": {
           "appendAttribution": false
         }
@@ -145,7 +145,7 @@
         "toEmail": "={{ $json['memberEmail'] || $json['email'] }}",
         "subject": "={{ $json['language'] !== 'en' ? 'تم استلام طلب العضوية | الرابطة السورية' : 'Membership Application Received | SCVA' }}",
         "emailType": "text",
-        "message": "={{ [\n  '== SCVA Workflow v3.3.0 ==',\n  '',\n  ($json['language'] !== 'en' \n    ? 'عزيزي الدكتور/ة ' + $json['fullName'] + '،'\n    : 'Dear Dr. ' + $json['englishName'] + ','),\n  '',\n  ($json['language'] !== 'en'\n    ? 'تم استلام طلب انضمامك بنجاح. سيتواصل معك فريقنا قريباً.'\n    : 'Your membership application has been received. Our team will contact you soon.'),\n  '',\n  $json['aiWelcome'] || '',\n  '',\n  ($json['language'] !== 'en' ? 'نوع العضوية: ' : 'Membership: ') + $json['membershipType'],\n  '',\n  'SCVA - Syrian Cardiovascular Association'\n].join('\\n') }}",
+        "message": "=={{ ($json['language'] !== 'en' ? ('عزيزي الدكتور/ة ' + ($json['fullName'] || '') + '،') : ('Dear Dr. ' + ($json['englishName'] || '') + ',')) + '\\n\\n' + ($json['language'] !== 'en' ? 'تم استلام طلب انضمامك للرابطة السورية لأمراض وجراحة القلب بنجاح.' : 'Your membership application to SCVA has been received successfully.') + '\\n' + ($json['language'] !== 'en' ? 'سيتواصل معك فريقنا قريباً.' : 'Our team will contact you soon.') + '\\n\\n' + ($json['aiWelcome'] ? ($json['aiWelcome'] + '\\n\\n') : '') + ($json['language'] !== 'en' ? 'نوع العضوية: ' : 'Membership Type: ') + ($json['membershipType'] || '—') + '\\n' + ($json['language'] !== 'en' ? 'التخصص: ' : 'Specialty: ') + ($json['specialty'] || '—') + '\\n\\n' + 'SCVA - Syrian Cardiovascular Association' }}",
         "options": {
           "appendAttribution": false
         }
@@ -411,11 +411,11 @@
   ],
   "triggerCount": 0,
   "updatedAt": "2026-05-05T20:58:43.178Z",
-  "versionId": "scva-v2.3",
+  "versionId": "scva-v2.4",
   "__meta": {
-    "description": "SCVA Member Registration Workflow v2.1 — يستقبل بيانات الأعضاء من نموذج HTML الخارجي، يتحقق من رمز الدعوة، يحفظ البيانات مباشرة في ملفات الإكسل على سيرفر SCVA عبر HTTP Request، ويُرسل إشعارات بريدية احترافية.",
-    "version": "3.3.0",
-    "changelog": "v3.3: switched to plain-text emails to diagnose blank body issue",
+    "description": "SCVA Member Registration Workflow v3.4.0 — يستقبل بيانات الأعضاء من نموذج HTML الخارجي، يتحقق من رمز الدعوة، يحفظ البيانات مباشرة في ملفات الإكسل على سيرفر SCVA عبر HTTP Request، ويُرسل إشعارات بريدية احترافية.",
+    "version": "3.4.0",
+    "changelog": "v3.4: fixed blank email body — replaced array.join() expression with direct string concatenation for reliable rendering in all n8n versions",
     "createdAt": "2026-05-04",
     "setupSteps": [
       "ما يُدمج تلقائياً عند التحميل من التطبيق:",
