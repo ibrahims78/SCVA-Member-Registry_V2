@@ -3,9 +3,9 @@
 # نظام إدارة الأعضاء — الرابطة السورية لأمراض وجراحة القلب
 ### SCVA Members Management System
 
-نظام احترافي ثنائي اللغة (عربي / إنجليزي) لإدارة قاعدة بيانات أعضاء جمعية طبية، يدعم سجلّ الاشتراكات السنوية، تصدير التقارير، وإدارة الصلاحيات.
+نظام احترافي ثنائي اللغة (عربي / إنجليزي) لإدارة قاعدة بيانات أعضاء جمعية طبية، يدعم سجلّ الاشتراكات السنوية، تصدير التقارير، إدارة الصلاحيات، وتسجيل الأعضاء الجدد ذاتياً عبر نموذج خارجي متكامل مع n8n.
 
-A bilingual (Arabic / English) full-stack member management platform for a medical association — with annual subscription tracking, report exports, and role-based access.
+A bilingual (Arabic / English) full-stack member management platform for a medical association — with annual subscription tracking, report exports, role-based access, and a self-registration form integrated with n8n automation.
 
 [![Made with TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -28,6 +28,8 @@ A bilingual (Arabic / English) full-stack member management platform for a medic
 - [متغيرات البيئة / Environment Variables](#-متغيرات-البيئة--environment-variables)
 - [الأوامر المتاحة / Available Scripts](#-الأوامر-المتاحة--available-scripts)
 - [قاعدة البيانات / Database](#-قاعدة-البيانات--database)
+- [نظام التسجيل الخارجي / External Registration](#-نظام-التسجيل-الخارجي--external-registration)
+- [الأداء / Performance](#-الأداء--performance)
 - [النشر / Deployment](#-النشر--deployment)
 - [الأمان / Security](#-الأمان--security)
 - [المساهمة / Contributing](#-المساهمة--contributing)
@@ -50,6 +52,13 @@ A bilingual (Arabic / English) full-stack member management platform for a medic
 | مصادقة آمنة بالـ Sessions + bcrypt | Secure Session-based auth + bcrypt |
 | صلاحيات بدور: مسؤول / موظف | Role-based access: admin / employee |
 | إجبار تغيير كلمة مرور المسؤول عند أوّل دخول | Forced password change on first admin login |
+| كلمة مرور أوّلية عشوائية قوية (24 حرفاً) | Strong random initial password (24 chars) |
+| حماية "آخر مسؤول" من الحذف والتنزيل | Last-admin protection (delete & demote) |
+| نموذج تسجيل خارجي مستقل مع rمز دعوة | Standalone external registration form with invite code |
+| تكامل n8n لأتمتة معالجة التسجيلات | n8n workflow integration for registration automation |
+| دعم الذكاء الاصطناعي (Gemini / OpenAI) | AI analysis support (Gemini / OpenAI) |
+| نسخ احتياطي شامل بضغطة واحدة | One-click full data backup (JSON) |
+| API عام مؤمَّن بـ Bearer token لاستيراد البيانات | Public API secured with Bearer token for data ingestion |
 
 ---
 
@@ -60,8 +69,8 @@ A bilingual (Arabic / English) full-stack member management platform for a medic
 - **Wouter** للتوجيه (lightweight router)
 - **shadcn/ui** على Radix UI primitives
 - **Tailwind CSS v4** + متغيرات CSS + الوضع الداكن
-- **TanStack Query v5** لإدارة حالة الخادم
-- **React Hook Form** + **Zod** للتحقق من النماذج
+- **TanStack Query v5** لإدارة حالة الخادم (`staleTime: 30s`)
+- **React Hook Form** + **Zod** للتحقق من النماذج (مخطط مشترك مع الخادم)
 - **Recharts** للرسوم البيانية، **xlsx** و **docx** للتصدير
 
 ### Backend
@@ -70,11 +79,13 @@ A bilingual (Arabic / English) full-stack member management platform for a medic
 - **connect-pg-simple** لتخزين الجلسات في PostgreSQL
 - **Drizzle ORM** + **node-postgres** للوصول لقاعدة البيانات
 - **Zod** للتحقق من جميع طلبات الكتابة
-- **Puppeteer / Chromium** لتوليد ملفات PDF
+- **Helmet** لرؤوس أمان HTTP
+- **express-rate-limit** للحماية من هجمات القوة الغاشمة
+- **Puppeteer / Chromium** لتوليد ملفات PDF (اختياري)
 
 ### Database
 - **PostgreSQL 15+**
-- جداول: `users`, `members`, `subscriptions`, `session`
+- جداول: `users`, `members`, `subscriptions`, `form_settings`, `session`
 
 ---
 
@@ -92,18 +103,22 @@ A bilingual (Arabic / English) full-stack member management platform for a medic
 │   └── index.html
 │
 ├── server/                  # واجهة Express الخلفية
-│   ├── index.ts             # نقطة الدخول
+│   ├── index.ts             # نقطة الدخول + إعداد Helmet + body limits + CSRF guard
 │   ├── routes.ts            # جميع مسارات الـ API
-│   ├── storage.ts           # طبقة الوصول للبيانات (IStorage)
-│   ├── auth.ts              # إعداد Passport
-│   ├── seed.ts              # سكربت زرع البيانات الأوّلية
+│   ├── storage.ts           # طبقة الوصول للبيانات (IStorage / DatabaseStorage)
+│   ├── auth.ts              # إعداد Passport + rate-limit على /api/login
+│   ├── seed.ts              # سكربت التحقق من وجود admin + ملخص DB
 │   └── vite.ts              # تهيئة Vite في وضع التطوير
 │
 ├── shared/
 │   └── schema.ts            # مخطط Drizzle + Zod (مشترك بين العميل والخادم)
 │
-├── docs/                    # توثيق إضافي ولقطات شاشة
-├── script/                  # سكربتات البناء
+├── script/
+│   ├── build.ts             # سكربت البناء للإنتاج
+│   └── reset-admin-password.ts  # إعادة تعيين كلمة المرور يدوياً
+│
+├── docs/                    # توثيق شامل (CHANGELOG, SECURITY, CODE_REVIEW, ...)
+│   └── form_by_n8n/         # نموذج التسجيل الخارجي + ملف workflow
 ├── drizzle.config.ts
 ├── vite.config.ts
 ├── tsconfig.json
@@ -154,7 +169,9 @@ npm run dev
 
 افتح المتصفّح على: **http://localhost:5000**
 
-> 🔐 عند أوّل تشغيل سيُنشأ حساب المسؤول الافتراضي `admin` بكلمة المرور المعرّفة في `ADMIN_INITIAL_PASSWORD`، وسيُطلب منك تغييرها فور تسجيل الدخول.
+> 🔐 **أوّل تشغيل:** يُنشأ حساب `admin` تلقائياً. إن لم يُضبط `ADMIN_INITIAL_PASSWORD`، تُطبع كلمة مرور عشوائية قوية (24 حرفاً) مرّة واحدة في سجلّ التشغيل. سيُطلب تغييرها فور تسجيل الدخول.
+>
+> 🔑 **نسيت كلمة المرور؟** استخدم `npx tsx script/reset-admin-password.ts` — راجع [`docs/ADMIN_PASSWORD_RESET.md`](docs/ADMIN_PASSWORD_RESET.md).
 
 ---
 
@@ -164,10 +181,10 @@ npm run dev
 |---|---|---|
 | `DATABASE_URL` | ✅ Always | سلسلة اتصال PostgreSQL |
 | `SESSION_SECRET` | ✅ Production | مفتاح توقيع جلسات الكوكيز (32+ بايت عشوائياً) |
-| `ADMIN_INITIAL_PASSWORD` | ⚠️ First boot | كلمة مرور المسؤول الافتراضي (≥ 8 أحرف) — تُستخدم مرّة واحدة فقط |
-| `CHROME_PATH` | ⛔ Optional | مسار Chromium لتصدير PDF (افتراضي: `/usr/bin/chromium`) |
+| `ADMIN_INITIAL_PASSWORD` | ⚠️ First boot | كلمة مرور المسؤول الافتراضي (≥ 8 أحرف) — تُستخدم مرّة واحدة. إن غابت، تُولَّد كلمة عشوائية وتُطبع في سجلّ التشغيل. |
+| `CHROME_PATH` | ⛔ Optional | مسار Chromium لتصدير PDF (افتراضي: `/usr/bin/chromium`). بدونه يُرجع endpoint الـ PDF `503` مع رسالة عربية. |
 | `PORT` | ⛔ Optional | منفذ الخادم (افتراضي: `5000`) |
-| `NODE_ENV` | ⛔ Optional | `development` أو `production` |
+| `NODE_ENV` | ⛔ Optional | `development` أو `production` — يؤثر على أمان الكوكيز وحماية CSRF |
 
 > 💡 لتوليد `SESSION_SECRET` آمن:
 > ```bash
@@ -182,10 +199,10 @@ npm run dev
 |---|---|
 | `npm run dev` | تشغيل خادم التطوير (Express + Vite middleware) على المنفذ 5000 |
 | `npm run build` | بناء حزمة الإنتاج إلى `dist/` |
-| `npm start` | تشغيل تطبيق الإنتاج بعد البناء |
+| `npm start` | تشغيل تطبيق الإنتاج بعد البناء (`node dist/index.cjs`) |
 | `npm run check` | فحص أنواع TypeScript |
 | `npm run db:push` | مزامنة مخطط Drizzle مع PostgreSQL |
-| `npm run seed` | زرع بيانات تجريبية |
+| `npm run seed` | التحقق من وجود admin وعرض ملخص قاعدة البيانات |
 
 ---
 
@@ -199,13 +216,57 @@ npm run db:push
 
 ### الجداول الرئيسية
 
-- **`users`** — مستخدمو النظام (admin / employee)
-- **`members`** — بيانات الأعضاء (الاسم، الاختصاص، نوع العضوية، ...)
-- **`subscriptions`** — سجلّ الاشتراكات السنوية لكل عضو
-- **`session`** — جلسات Express (تُنشأ تلقائياً)
+| الجدول | الغرض |
+|---|---|
+| `users` | مستخدمو النظام (admin / employee) |
+| `members` | بيانات الأعضاء (الاسم، الاختصاص، نوع العضوية، ...) |
+| `subscriptions` | سجلّ الاشتراكات السنوية لكل عضو |
+| `form_settings` | إعدادات نموذج التسجيل الخارجي (رمز الدعوة، webhook، API key، إعدادات AI) |
+| `session` | جلسات Express (تُنشأ تلقائياً بواسطة connect-pg-simple) |
 
 ### استيراد جماعي من Excel
 يدعم النظام رفع ملفات `.xlsx` للأعضاء والاشتراكات من صفحة الإعدادات، مع وضع **«تحديث القيود الموجودة»** لمنع التكرار وتطبيق التغييرات بأمان.
+
+---
+
+## 📋 نظام التسجيل الخارجي / External Registration
+
+يتيح النظام للأعضاء الجدد تسجيل أنفسهم ذاتياً دون الحاجة لحساب في النظام.
+
+### المكونات
+| المكوّن | الوصف |
+|---|---|
+| `/form` | نموذج HTML مستقل رباعي الخطوات (تحقق → بيانات → تواصل → مراجعة) |
+| `POST /api/public/append-excel` | يستقبل بيانات العضو من n8n ويضيفها لملف Excel المناسب (مؤمَّن بـ Bearer token) |
+| `GET /api/admin/excel-download` | تحميل ملف Excel المحدَّث (`?lang=ar` أو `?lang=en`) |
+| `GET /api/public/verify-code` | التحقق من رمز الدعوة |
+| `GET /api/public/form-config` | يُرجع webhook URL للنموذج |
+| `GET/PUT /api/form-settings` | إدارة الإعدادات (للمدراء فقط) |
+
+### ميزات النموذج
+- 4 خطوات: التحقق من رمز الدعوة ← البيانات الأساسية ← التواصل والمهنة ← المراجعة والإرسال
+- ثنائي اللغة (عربي RTL / إنجليزي LTR) مع تبديل فوري
+- الوضع الداكن / الفاتح مع حفظ في localStorage
+- تحقق فوري من كل حقل مع أيقونات ✅/❌
+- حفظ تلقائي كل 30 ثانية + استعادة عند الرجوع
+- قفل 3 محاولات خاطئة للرمز (5 دقائق مع عداد تنازلي)
+- صفحة تأكيد مع ملخص كامل + دعم الطباعة
+
+### إعداد التكامل مع n8n (مرّة واحدة)
+1. حدّد رمز الدعوة، بريد الإشعارات، ورابط webhook في صفحة الإعدادات
+2. (اختياري) أضف مفتاح API لـ Gemini أو OpenAI لتحليل التسجيلات بالذكاء الاصطناعي
+3. حمّل ملف `scva-member-workflow.json` وافتحه في n8n — جميع الإعدادات تُحقَن تلقائياً
+4. شارك رابط `/form` + رمز الدعوة مع الأعضاء الجدد
+
+> 📖 للتوثيق الكامل: [`docs/form_by_n8n/دراسة-نموذج-تسجيل-الأعضاء.md`](docs/form_by_n8n/دراسة-نموذج-تسجيل-الأعضاء.md)
+
+---
+
+## ⚡ الأداء / Performance
+
+- **استعلام واحد** لجلب اشتراكات أعضاء متعددين (`getSubscriptionsByMemberIds`) بدلاً من N+1 — يُقدَّر بتحسّن ~7.7× على 99 عضواً ويزداد مع البيانات الأكبر.
+- **TanStack Query `staleTime: 30s`** — البيانات تُحدَّث تلقائياً كل 30 ثانية بدل الإبقاء قديمة إلى ما لا نهاية.
+- **استعلام واحد للإحصاءات** في `/api/members` و `/api/backup` و `/api/subscriptions/import` لتجنّب أنماط N+1.
 
 ---
 
@@ -238,21 +299,31 @@ NODE_ENV=production npm start
 
 ## 🛡️ الأمان / Security
 
-- ✅ كل مسارات `/api/*` (عدا `/api/login` و `/api/user`) تتطلب جلسة مصادَقة.
-- ✅ كل عمليات `/api/users*` والإدارة تتطلب صلاحية `admin`.
-- ✅ كلمات المرور مُجزَّأة بـ **bcrypt** (10 rounds).
-- ✅ كوكي الجلسة `httpOnly`, `sameSite: lax`, و `secure` في الإنتاج.
-- ✅ لا توجد كلمة مرور افتراضية مُضمَّنة في الكود — يجب ضبط `ADMIN_INITIAL_PASSWORD`.
-- ✅ تنظيف حقل `password` من جميع استجابات API والسجلات (logs).
-- ✅ تحقق Zod على جميع طلبات الكتابة.
+| الإجراء | التفاصيل |
+|---|---|
+| ✅ المصادقة | جميع مسارات `/api/*` (عدا `/api/login`) تتطلب جلسة مصادَقة |
+| ✅ التحكم بالصلاحيات | `/api/users*` والعمليات الإدارية تتطلب دور `admin` |
+| ✅ bcrypt | كلمات المرور مُجزَّأة بـ 10 rounds |
+| ✅ كوكي الجلسة | `httpOnly`, `sameSite: strict` (إنتاج) / `lax` (تطوير), `secure` في الإنتاج |
+| ✅ Helmet | 9 رؤوس أمان HTTP: HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, ... |
+| ✅ Rate Limiting | `/api/login`: 10 محاولات لكل IP كل 15 دقيقة |
+| ✅ CSRF Guard | فحص `Origin`/`Referer` على جميع مسارات الكتابة في الإنتاج |
+| ✅ Body Size Limits | 5MB لـ JSON، 1MB لـ urlencoded |
+| ✅ حماية آخر مسؤول | الخادم يرفض (409) حذف أو تنزيل آخر مسؤول |
+| ✅ كلمة مرور عشوائية | لا توجد كلمة مرور افتراضية مُضمَّنة في الكود |
+| ✅ تنظيف السجلات | حقل `password` يُحذف من جميع استجابات API والـ logs |
+| ✅ Zod | تحقق على جميع طلبات الكتابة (مخطط مشترك بين الواجهة والخادم) |
+| ✅ Bearer Token | `/api/public/append-excel` مؤمَّن بمفتاح API عشوائي |
 
-> إذا اكتشفت ثغرة أمنية، يرجى عدم فتح Issue عام — أرسل بريداً مباشراً للمشرف.
+> إذا اكتشفت ثغرة أمنية، يرجى عدم فتح Issue عام — راجع [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ---
 
 ## 🤝 المساهمة / Contributing
 
-نرحّب بالمساهمات! الرجاء اتباع الخطوات التالية:
+نرحّب بالمساهمات! راجع [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) للتفاصيل الكاملة.
+
+الخطوات السريعة:
 
 1. اعمل **Fork** للمستودع.
 2. أنشئ فرعاً جديداً: `git checkout -b feat/my-feature`.
@@ -261,9 +332,10 @@ NODE_ENV=production npm start
 5. افتح **Pull Request** مع وصف واضح للتغييرات.
 
 ### معايير الكود
-- TypeScript strict mode
-- اتباع نمط الكود الموجود (Prettier-compatible)
-- إضافة `data-testid` لكل عنصر تفاعلي جديد
+- TypeScript strict mode — تجنّب `any`
+- جميع طلبات البيانات عبر TanStack Query
+- جميع مسارات الخادم الجديدة تمرّ بـ `requireAuth`
+- جميع النصوص في كلا اللغتين (`isAr ? "..." : "..."`)
 - التأكد من نجاح `npm run check` قبل الدفع
 
 ---
