@@ -285,22 +285,21 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify($json.aiBody) }}",
         "options": {
-          "response": {
-            "response": {
-              "fullResponse": true,
-              "responseFormat": "json"
-            }
-          },
           "redirect": {
             "redirect": {
               "followRedirects": true,
               "maxRedirects": 3
             }
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
           }
-        }
+        },
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.aiBody }}"
       },
       "id": "ai-http-request",
       "name": "AI HTTP Request",
@@ -493,8 +492,8 @@
   "versionId": "scva-v3.9",
   "__meta": {
     "description": "SCVA Member Registration Workflow v3.5.0 — يستقبل بيانات الأعضاء من نموذج HTML الخارجي، يتحقق من رمز الدعوة، يحفظ البيانات مباشرة في ملفات الإكسل على سيرفر SCVA عبر HTTP Request، ويُرسل إشعارات بريدية احترافية.",
-    "version": "6.0.0",
-    "changelog": "v6.0: Replace AI Code node (fetch/https blocked in n8n sandbox) with 3-node chain: Build AI Prompt (Code) → AI HTTP Request (HTTP Request node) → Parse AI Response (Code). Single combined prompt returns JSON with both adminAnalysis and memberWelcome.",
+    "version": "6.1.0",
+    "changelog": "v6.1: Fix AI HTTP Request — specifyBody=json + jsonBody=$json.aiBody (was string+JSON.stringify which double-encoded the body)",
     "createdAt": "2026-05-04",
     "setupSteps": [
       "ما يُدمج تلقائياً عند التحميل من التطبيق:",
