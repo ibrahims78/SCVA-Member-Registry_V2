@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نموذج تسجيل العضوية — الرابطة السورية لأمراض وجراحة القلب</title>
-<meta name="description" content="سجّل بياناتك كعضو في الرابطة السورية لأمراض وجراحة القلب">
+<title>نموذج تحديث بيانات العضوية — الرابطة السورية لأمراض وجراحة القلب</title>
+<meta name="description" content="حدّث بياناتك كعضو في الرابطة السورية لأمراض وجراحة القلب">
 <style>
   :root {
     --bg-main: #0f2027;
@@ -558,8 +558,8 @@
 
     <!-- Header -->
     <div class="form-header">
-      <h1 id="hdr-title">نموذج طلب العضوية</h1>
-      <p id="hdr-sub">الرابطة السورية لأمراض وجراحة القلب — عبّئ بياناتك بدقة لإتمام التسجيل</p>
+      <h1 id="hdr-title">نموذج تحديث بيانات العضوية</h1>
+      <p id="hdr-sub">الرابطة السورية لأمراض وجراحة القلب — عبّئ بياناتك بدقة لإتمام التحديث</p>
     </div>
 
     <!-- Progress -->
@@ -832,7 +832,7 @@
         </button>
         <button class="btn btn-primary" id="btn-submit" onclick="submitForm()">
           <span class="spinner" id="spinner-submit"></span>
-          <span id="btn-submit-txt">إرسال الطلب</span>
+          <span id="btn-submit-txt">إرسال التحديث</span>
           <span>📤</span>
         </button>
       </div>
@@ -847,10 +847,10 @@
         <h4 id="summary-title">ملخص بياناتك</h4>
         <div id="summary-rows"></div>
       </div>
-      <div class="print-hint" id="print-hint">يمكنك طباعة هذه الصفحة للاحتفاظ بسجل طلبك</div>
+      <div class="print-hint" id="print-hint">يمكنك طباعة هذه الصفحة للاحتفاظ بسجل تحديثك</div>
       <div class="success-actions" style="margin-top:20px">
         <button class="btn btn-secondary" onclick="window.print()">🖨️ <span id="btn-print">طباعة</span></button>
-        <button class="btn btn-primary" onclick="resetForm()">➕ <span id="btn-new">تسجيل عضو آخر</span></button>
+        <button class="btn btn-primary" onclick="resetForm()">➕ <span id="btn-new">تحديث بيانات عضو آخر</span></button>
       </div>
     </div>
 
@@ -868,8 +868,8 @@
     </div>
   </div>
   <hr class="ph-hr" />
-  <div class="ph-doc-title">وثيقة تأكيد طلب العضوية</div>
-  <div class="ph-doc-sub">Membership Application Confirmation</div>
+  <div class="ph-doc-title">وثيقة تأكيد تحديث بيانات العضوية</div>
+  <div class="ph-doc-sub">Membership Data Update Confirmation</div>
 
   <!-- Sections (populated by JS) -->
   <div id="print-sections"></div>
@@ -883,7 +883,7 @@
     <div class="pf-sig-row">
       <div class="pf-sig-box">
         <div class="pf-sig-line"></div>
-        <div class="pf-sig-label">توقيع مقدّم الطلب</div>
+        <div class="pf-sig-label">توقيع العضو</div>
       </div>
       <div class="pf-sig-box">
         <div class="pf-sig-line"></div>
@@ -896,7 +896,7 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  SCVA Member Registration Form — Full Implementation
+//  SCVA Member Data Update Form — Full Implementation
 // ═══════════════════════════════════════════════════════════
 
 // ── State ──
@@ -918,8 +918,8 @@ const LOCKOUT_KEY = 'scva-lockout';
 const T = {
   ar: {
     logoText: 'الرابطة السورية لأمراض وجراحة القلب',
-    hdrTitle: 'نموذج طلب العضوية',
-    hdrSub: 'الرابطة السورية لأمراض وجراحة القلب — عبّئ بياناتك بدقة لإتمام التسجيل',
+    hdrTitle: 'نموذج تحديث بيانات العضوية',
+    hdrSub: 'الرابطة السورية لأمراض وجراحة القلب — عبّئ بياناتك بدقة لإتمام التحديث',
     s1Title: 'التحقق من الهوية',
     s1Desc: 'أدخل رمز الدعوة الذي حصلت عليه من الجمعية للمتابعة.',
     s2Title: 'البيانات الأساسية',
@@ -934,9 +934,9 @@ const T = {
     btnNext: 'التالي',
     btnBack: 'رجوع',
     btnReview: 'مراجعة البيانات',
-    btnSubmit: 'إرسال الطلب',
+    btnSubmit: 'إرسال التحديث',
     btnPrint: 'طباعة',
-    btnNewMember: 'تسجيل عضو آخر',
+    btnNewMember: 'تحديث بيانات عضو آخر',
     lblFn: 'الاسم الأول', lblLn: 'الكنية',
     lblFullname: 'الاسم الكامل بالعربية',
     lblEnName: 'الاسم الكامل بالإنجليزية',
@@ -963,10 +963,10 @@ const T = {
     webhookMissing: 'لم يتم تكوين نظام الاستقبال بعد. يُرجى التواصل مع إدارة الجمعية.',
     submitError: 'فشل إرسال البيانات. يُرجى التحقق من اتصالك بالإنترنت والمحاولة مجدداً.',
     submitSending: 'جارٍ الإرسال...',
-    successTitle: (name) => `شكراً ${name}! تم استلام طلبك بنجاح ✅`,
-    successSub: 'سيتواصل معك فريق الجمعية قريباً لإتمام إجراءات القبول.',
-    summaryTitle: 'ملخص بياناتك المُرسَلة',
-    printHint: 'يمكنك طباعة هذه الصفحة للاحتفاظ بسجل طلبك',
+    successTitle: (name) => `شكراً ${name}! تم استلام تحديث بياناتك بنجاح ✅`,
+    successSub: 'سيتواصل معك فريق الجمعية قريباً للمتابعة.',
+    summaryTitle: 'ملخص بياناتك المُحدَّثة',
+    printHint: 'يمكنك طباعة هذه الصفحة للاحتفاظ بسجل تحديثك',
     revBasic: 'البيانات الأساسية', revContact: 'بيانات التواصل والمهنة',
     revEdit: 'تعديل',
     restoreMsg: 'وجدنا بياناتك السابقة، هل تريد استكمالها؟',
@@ -980,8 +980,8 @@ const T = {
   },
   en: {
     logoText: 'Syrian Cardiovascular Association',
-    hdrTitle: 'Membership Registration Form',
-    hdrSub: 'Syrian Cardiovascular Association — Please fill in your details accurately',
+    hdrTitle: 'Membership Data Update Form',
+    hdrSub: 'Syrian Cardiovascular Association — Please fill in your details accurately to complete the update',
     s1Title: 'Identity Verification',
     s1Desc: 'Enter the invitation code you received from the association to proceed.',
     s2Title: 'Basic Information',
@@ -996,9 +996,9 @@ const T = {
     btnNext: 'Next',
     btnBack: 'Back',
     btnReview: 'Review Data',
-    btnSubmit: 'Submit Application',
+    btnSubmit: 'Submit Update',
     btnPrint: 'Print',
-    btnNewMember: 'Register Another Member',
+    btnNewMember: 'Update Another Member',
     lblFn: 'First name', lblLn: 'Last name',
     lblFullname: 'Full name (Arabic)',
     lblEnName: 'Full name (English)',
@@ -1022,13 +1022,13 @@ const T = {
     lockoutText: 'You have exceeded the allowed attempts. Please try again in:',
     confirmLabel: 'I confirm that the information I have entered is accurate and I agree to share it with the Syrian Cardiovascular Association.',
     confirmRequired: 'Please confirm the accuracy of your information first',
-    webhookMissing: 'The registration system is not configured yet. Please contact the association.',
+    webhookMissing: 'The update system is not configured yet. Please contact the association.',
     submitError: 'Failed to submit. Please check your internet connection and try again.',
     submitSending: 'Submitting...',
-    successTitle: (name) => `Thank you, ${name}! Your application was received ✅`,
-    successSub: 'The SCVA team will contact you soon to complete the membership process.',
-    summaryTitle: 'Your Submitted Information',
-    printHint: 'You can print this page to keep a record of your application',
+    successTitle: (name) => `Thank you, ${name}! Your data update was received ✅`,
+    successSub: 'The SCVA team will contact you soon to follow up.',
+    summaryTitle: 'Your Updated Information',
+    printHint: 'You can print this page to keep a record of your update',
     revBasic: 'Basic Information', revContact: 'Contact & Professional Info',
     revEdit: 'Edit',
     restoreMsg: 'We found your previous data. Would you like to continue where you left off?',
@@ -1472,8 +1472,8 @@ async function submitForm() {
       }
       if (resBody.code === 'DUPLICATE_ENTRY') {
         const dupMsg = currentLang === 'ar'
-          ? 'أنت مسجّل بالفعل في الرابطة. إذا كنت تعتقد أن ذلك خطأ، تواصل مع إدارة الجمعية.'
-          : 'You are already registered. If you believe this is an error, please contact the association.';
+          ? 'لقد أرسلت طلب تحديث مسبقاً. إذا كنت تعتقد أن ذلك خطأ، تواصل مع إدارة الجمعية.'
+          : 'You have already submitted an update. If you believe this is an error, please contact the association.';
         showErr('err-submit', dupMsg);
         isSubmitting = false;
         setSpinner('spinner-submit', false);
@@ -1490,8 +1490,8 @@ async function submitForm() {
     // Also treat isDuplicate:true as a non-fatal duplicate (server returned 200 but didn't add)
     if (resBody.isDuplicate) {
       const dupMsg = currentLang === 'ar'
-        ? 'أنت مسجّل بالفعل في الرابطة. إذا كنت تعتقد أن ذلك خطأ، تواصل مع إدارة الجمعية.'
-        : 'You are already registered. If you believe this is an error, please contact the association.';
+        ? 'لقد أرسلت طلب تحديث مسبقاً. إذا كنت تعتقد أن ذلك خطأ، تواصل مع إدارة الجمعية.'
+        : 'You have already submitted an update. If you believe this is an error, please contact the association.';
       showErr('err-submit', dupMsg);
       isSubmitting = false;
       setSpinner('spinner-submit', false);
@@ -1610,7 +1610,7 @@ function populatePrintDoc(data) {
     ts.toLocaleString(isAr ? 'ar-SY' : 'en-GB');
   const refNum = data.submittedAt ? ts.getTime().toString().slice(-8) : Date.now().toString().slice(-8);
   document.getElementById('print-ref').textContent =
-    (isAr ? 'رقم الطلب: ' : 'Ref: ') + refNum;
+    (isAr ? 'رقم التحديث: ' : 'Ref: ') + refNum;
 }
 
 function resetForm() {
