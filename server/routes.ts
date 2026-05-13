@@ -1,7 +1,6 @@
 import type { Express, NextFunction, Request, Response } from "express";
 import { type Server } from "http";
 import path from "path";
-import { fileURLToPath } from "url";
 import { z } from "zod";
 import puppeteer from "puppeteer-core";
 import { storage, consumeInitialAdminPassword } from "./storage";
@@ -908,11 +907,9 @@ export async function registerRoutes(
     try {
       const settings = await storage.getFormSettings();
 
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = path.dirname(__filename);
       const workflowPath = path.resolve(
-        __dirname,
-        "../docs/form_by_n8n/workflow/scva-member-workflow.json",
+        process.cwd(),
+        "docs/form_by_n8n/workflow/scva-member-workflow.json",
       );
 
       const { readFileSync } = await import("fs");
@@ -1014,9 +1011,7 @@ export async function registerRoutes(
 
   // ---------- Public: serve the external member registration form ----------
   app.get("/form", (_req, res) => {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const formPath = path.resolve(__dirname, "../docs/form_by_n8n/member-form.html");
+    const formPath = path.resolve(process.cwd(), "docs/form_by_n8n/member-form.html");
     res.sendFile(formPath);
   });
 
