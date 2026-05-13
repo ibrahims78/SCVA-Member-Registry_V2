@@ -24,7 +24,7 @@ import {
   Loader2, UserPlus, Pencil, Trash2, ShieldCheck,
   FileSpreadsheet, Download, Upload, DatabaseBackup,
   CheckCircle2, AlertCircle, X, Receipt,
-  Link2, Mail, KeyRound, Eye, EyeOff, Copy, ClipboardCheck, Workflow, Sparkles,
+  Link2, Mail, KeyRound, Eye, EyeOff, Copy, ClipboardCheck, Workflow, Sparkles, Send,
 } from "lucide-react";
 import { MEMBER_COLUMNS, SUBSCRIPTION_COLUMNS, buildHeaderIndex } from "@/lib/importColumns";
 import { useState, useRef, useEffect } from "react";
@@ -219,6 +219,12 @@ export default function Settings() {
   const [isTestingAi, setIsTestingAi] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isSavingAiSettings, setIsSavingAiSettings] = useState(false);
+  const [telegramBotToken, setTelegramBotToken] = useState("");
+  const [telegramChatId, setTelegramChatId] = useState("");
+  const [showTelegramToken, setShowTelegramToken] = useState(false);
+  const [isTestingTelegram, setIsTestingTelegram] = useState(false);
+  const [telegramTestResult, setTelegramTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [isSavingTelegramSettings, setIsSavingTelegramSettings] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -234,6 +240,8 @@ export default function Settings() {
     if (formSettingsData) {
       setAiProvider((formSettingsData.aiProvider as "openai" | "gemini") || "openai");
       setAiApiKey(formSettingsData.aiApiKey || "");
+      setTelegramBotToken(formSettingsData.telegramBotToken || "");
+      setTelegramChatId(formSettingsData.telegramChatId || "");
     }
   }, [formSettingsData]);
 
@@ -343,6 +351,50 @@ export default function Settings() {
       toast({ title: isAr ? "خطأ في الحفظ" : "Save failed", variant: "destructive" });
     } finally {
       setIsSavingAiSettings(false);
+    }
+  };
+
+  const handleTestTelegram = async () => {
+    if (!telegramBotToken.trim() || !telegramChatId.trim()) {
+      toast({
+        title: isAr ? "مطلوب" : "Required",
+        description: isAr ? "يرجى إدخال التوكن ومعرّف المحادثة أولاً" : "Please enter bot token and chat ID first",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsTestingTelegram(true);
+    setTelegramTestResult(null);
+    try {
+      const res = await apiRequest("POST", "/api/admin/test-telegram", {
+        botToken: telegramBotToken,
+        chatId: telegramChatId,
+      });
+      const data = await res.json() as { success: boolean; message: string };
+      setTelegramTestResult(data);
+    } catch {
+      setTelegramTestResult({ success: false, message: isAr ? "فشل الاتصال بالخادم" : "Failed to connect to server" });
+    } finally {
+      setIsTestingTelegram(false);
+    }
+  };
+
+  const handleSaveTelegramSettings = async () => {
+    setIsSavingTelegramSettings(true);
+    try {
+      const res = await apiRequest("PUT", "/api/form-settings", { telegramBotToken, telegramChatId });
+      if (!res.ok) throw new Error(isAr ? "فشل الحفظ" : "Save failed");
+      await queryClient.invalidateQueries({ queryKey: ["/api/form-settings"] });
+      toast({
+        title: isAr ? "تم الحفظ" : "Saved",
+        description: isAr
+          ? "تم حفظ إعدادات Telegram بنجاح. حمّل ملف Workflow مجدداً لتضمين البيانات."
+          : "Telegram settings saved. Re-download the Workflow file to embed them.",
+      });
+    } catch {
+      toast({ title: isAr ? "خطأ في الحفظ" : "Save failed", variant: "destructive" });
+    } finally {
+      setIsSavingTelegramSettings(false);
     }
   };
 
@@ -1625,6 +1677,166 @@ export default function Settings() {
                 {isSavingAiSettings
                   ? (isAr ? "جارٍ الحفظ..." : "Saving...")
                   : (isAr ? "حفظ إعدادات الذكاء الاصطناعي" : "Save AI settings")}
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ===== Telegram Settings ===== */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-[#2AABEE]/10 text-[#2AABEE] flex items-center justify-center ring-1 ring-[#2AABEE]/20">
+              <Send className="h-4 w-4" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">
+                {isAr ? "إشعارات Telegram" : "Telegram Notifications"}
+              </CardTitle>
+              <CardDescription>
+                {isAr
+                  ? "ربط بوت Telegram لإرسال إشعار فوري للمسؤول عند تسجيل عضو جديد عبر النموذج."
+                  : "Connect a Telegram bot to send instant admin alerts when a new member registers via the form."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {isLoadingFormSettings ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {isAr ? "جارٍ التحميل..." : "Loading..."}
+            </div>
+          ) : (
+            <>
+              {/* How to get token info */}
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground flex items-center gap-1.5">
+                  <Send className="h-3.5 w-3.5 text-[#2AABEE]" />
+                  {isAr ? "كيف تنشئ بوت Telegram؟" : "How to create a Telegram bot?"}
+                </p>
+                <ol className="space-y-1 list-decimal list-inside">
+                  <li>{isAr ? "افتح Telegram وابحث عن @BotFather" : "Open Telegram and search for @BotFather"}</li>
+                  <li>{isAr ? "أرسل /newbot واتبع التعليمات للحصول على التوكن" : "Send /newbot and follow instructions to get the token"}</li>
+                  <li>{isAr ? "أضف البوت لمجموعة أو محادثة وابدأ الحوار معه" : "Add the bot to a group or chat and start a conversation"}</li>
+                  <li>
+                    {isAr
+                      ? "للحصول على Chat ID: أرسل رسالة للبوت ثم افتح الرابط:"
+                      : "To get Chat ID: send a message to the bot then open:"}
+                    {" "}
+                    <span className="font-mono text-foreground">api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</span>
+                  </li>
+                </ol>
+              </div>
+
+              {/* Bot Token */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <KeyRound className="h-3.5 w-3.5 text-[#2AABEE]" />
+                  {isAr ? "توكن البوت (Bot Token)" : "Bot Token"}
+                </Label>
+                <div className="relative">
+                  <Input
+                    type={showTelegramToken ? "text" : "password"}
+                    value={telegramBotToken}
+                    onChange={(e) => {
+                      setTelegramBotToken(e.target.value);
+                      setTelegramTestResult(null);
+                    }}
+                    placeholder="123456789:AAF..."
+                    dir="ltr"
+                    className="pe-10 font-mono text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowTelegramToken((v) => !v)}
+                    className="absolute inset-y-0 end-2 flex items-center px-1 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                  >
+                    {showTelegramToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Chat ID */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <Mail className="h-3.5 w-3.5 text-[#2AABEE]" />
+                  {isAr ? "معرّف المحادثة (Chat ID)" : "Chat ID"}
+                </Label>
+                <Input
+                  type="text"
+                  value={telegramChatId}
+                  onChange={(e) => {
+                    setTelegramChatId(e.target.value);
+                    setTelegramTestResult(null);
+                  }}
+                  placeholder="-1001234567890"
+                  dir="ltr"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? "يمكن أن يكون معرّف مستخدم أو مجموعة (يبدأ بـ - للمجموعات)"
+                    : "Can be a user ID or group ID (groups start with -)"}
+                </p>
+              </div>
+
+              {/* Test button + result */}
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleTestTelegram}
+                  disabled={isTestingTelegram || !telegramBotToken.trim() || !telegramChatId.trim()}
+                >
+                  {isTestingTelegram ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  {isTestingTelegram
+                    ? (isAr ? "جارٍ الإرسال..." : "Sending...")
+                    : (isAr ? "إرسال رسالة اختبار" : "Send test message")}
+                </Button>
+
+                {telegramTestResult && (
+                  <div className={`rounded-md border px-4 py-3 text-sm flex items-start gap-2.5 ${
+                    telegramTestResult.success
+                      ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
+                      : "border-destructive/30 bg-destructive/5 text-destructive"
+                  }`}>
+                    {telegramTestResult.success
+                      ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+                      : <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />}
+                    <div>
+                      <p className="font-medium text-xs mb-0.5">
+                        {telegramTestResult.success
+                          ? (isAr ? "✅ تم الإرسال بنجاح!" : "✅ Sent successfully!")
+                          : (isAr ? "❌ فشل الإرسال" : "❌ Send failed")}
+                      </p>
+                      <p className="text-xs opacity-80">{telegramTestResult.message}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Save button */}
+              <Button
+                onClick={handleSaveTelegramSettings}
+                disabled={isSavingTelegramSettings}
+                className="gap-2"
+              >
+                {isSavingTelegramSettings ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                {isSavingTelegramSettings
+                  ? (isAr ? "جارٍ الحفظ..." : "Saving...")
+                  : (isAr ? "حفظ إعدادات Telegram" : "Save Telegram settings")}
               </Button>
             </>
           )}

@@ -91,7 +91,17 @@ Preferred communication style: Simple, everyday language (Arabic).
 
 A full Arabic code review and a phase-by-phase remediation log are at `docs/CODE_REVIEW.md` (security, TypeScript, performance, code quality, architecture).
 
-## تغييرات الإصدار الأخير (v2.5 — AI Integration)
+## تغييرات الإصدار الأخير (v4.0 — Telegram Notifications)
+
+- **حقلان جديدان في DB**: `telegram_bot_token` و `telegram_chat_id` في جدول `form_settings`.
+- **Endpoint جديد**: `POST /api/admin/test-telegram` — يرسل رسالة اختبار فعلية للتحقق من صحة إعدادات البوت.
+- **عقدة Telegram في Workflow**: Code node باسم `"telegram-notify"` تُضاف بعد `Email Admin — Notification` مباشرةً، ترسل رسالة HTML منسّقة تتضمن بيانات العضو الجديد.
+- **حقن تلقائي**: عند تحميل ملف Workflow، يُستبدل `'__SCVA_TELEGRAM_TOKEN__'` و `'__SCVA_TELEGRAM_CHAT_ID__'` بالقيم الفعلية المحفوظة.
+- **Skip graceful**: إذا لم تُضبط إعدادات Telegram، تُتجاوز العقدة تلقائياً دون إيقاف الـ workflow.
+- **صفحة الإعدادات**: بطاقة "إشعارات Telegram" جديدة مع حقلَي التوكن ومعرّف المحادثة، زر اختبار، وزر حفظ.
+- **Workflow v4.0**: تحديث الاتصالات — `Email Admin → Telegram → Member has email?` — وتحديث مواضع العقد اللاحقة.
+
+## تغييرات الإصدار (v2.5 — AI Integration)
 
 - **حقل aiProvider + aiApiKey**: مضافان لجدول `form_settings` — يخزّنان مزوّد AI والمفتاح.
 - **Endpoint جديد**: `POST /api/admin/test-ai` — يختبر صلاحية مفتاح API لـ OpenAI أو Gemini قبل الحفظ.

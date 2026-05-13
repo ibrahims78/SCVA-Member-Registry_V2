@@ -50,6 +50,8 @@ export const formSettings = pgTable("form_settings", {
   apiKey: text("api_key").notNull().default(""),
   aiProvider: text("ai_provider").notNull().default("openai"),
   aiApiKey: text("ai_api_key").notNull().default(""),
+  telegramBotToken: text("telegram_bot_token").notNull().default(""),
+  telegramChatId: text("telegram_chat_id").notNull().default(""),
 });
 
 export const genderEnum = z.enum(["male", "female"]);
@@ -118,6 +120,8 @@ export const insertFormSettingsSchema = z.object({
   enExcelPath: z.string().optional(),
   aiProvider: z.enum(["openai", "gemini"]).optional(),
   aiApiKey: z.string().optional(),
+  telegramBotToken: z.string().optional(),
+  telegramChatId: z.string().optional(),
 });
 
 export type FormSettings = typeof formSettings.$inferSelect;

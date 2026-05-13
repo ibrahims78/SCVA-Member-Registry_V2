@@ -108,6 +108,19 @@
     },
     {
       "parameters": {
+        "jsCode": "// ══════════════════════════════════════════════════\n//  Telegram — إشعار المسؤول (اختياري)\n// ══════════════════════════════════════════════════\nconst TOKEN   = '__SCVA_TELEGRAM_TOKEN__';\nconst CHAT_ID = '__SCVA_TELEGRAM_CHAT_ID__';\n\n// تجاوز العقدة إذا لم تُضبط إعدادات تيليغرام\nif (!TOKEN || TOKEN === '__SCVA_TELEGRAM_TOKEN__' || !CHAT_ID || CHAT_ID === '__SCVA_TELEGRAM_CHAT_ID__') {\n  return [{ json: { telegramSkipped: true, reason: 'Telegram not configured' } }];\n}\n\nlet d = {};\ntry { d = $('Build Email HTML').first().json || {}; } catch(e) {}\n\nconst v = (val) => (val && String(val).trim()) ? String(val).trim() : '—';\nconst fullName    = v(d.fullName);\nconst englishName = v(d.englishName);\nconst specialty   = v(d.specialty);\nconst membership  = v(d.membershipType);\nconst phone       = v(d.phone);\nconst city        = v(d.city);\nconst email       = d.memberEmail || d.email || '—';\n\nconst text =\n  '🔔 <b>عضو جديد — الرابطة السورية لأمراض وجراحة القلب</b>\\n\\n' +\n  '👤 <b>الاسم:</b> ' + fullName + '\\n' +\n  '🔤 <b>English:</b> ' + englishName + '\\n' +\n  '🏥 <b>التخصص:</b> ' + specialty + '\\n' +\n  '🎫 <b>العضوية:</b> ' + membership + '\\n' +\n  '📍 <b>المدينة:</b> ' + city + '\\n' +\n  '📞 <b>الهاتف:</b> ' + phone + '\\n' +\n  '📧 <b>البريد:</b> ' + email + '\\n\\n' +\n  '⏰ <i>' + new Date().toLocaleString('ar-SY', { timeZone: 'Asia/Damascus' }) + '</i>';\n\ntry {\n  const resp = await fetch('https://api.telegram.org/bot' + TOKEN + '/sendMessage', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ chat_id: CHAT_ID, text: text, parse_mode: 'HTML' })\n  });\n  const result = await resp.json();\n  return [{ json: { telegramSent: result.ok, telegramResult: result } }];\n} catch(err) {\n  return [{ json: { telegramSent: false, telegramError: err.message } }];\n}"
+      },
+      "id": "telegram-notify",
+      "name": "Telegram — إشعار المسؤول",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        300
+      ]
+    },
+    {
+      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -135,7 +148,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        2660,
+        2880,
         300
       ]
     },
@@ -155,7 +168,7 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        2880,
+        3100,
         180
       ]
     },
@@ -172,7 +185,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        2880,
+        3100,
         420
       ]
     },
@@ -402,6 +415,17 @@
       "main": [
         [
           {
+            "node": "Telegram — إشعار المسؤول",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram — إشعار المسؤول": {
+      "main": [
+        [
+          {
             "node": "Member has email?",
             "type": "main",
             "index": 0
@@ -489,7 +513,7 @@
   ],
   "triggerCount": 0,
   "updatedAt": "2026-05-05T20:58:43.178Z",
-  "versionId": "scva-v3.9",
+  "versionId": "scva-v4.0",
   "__meta": {
     "description": "SCVA Member Registration Workflow v3.5.0 — يستقبل بيانات الأعضاء من نموذج HTML الخارجي، يتحقق من رمز الدعوة، يحفظ البيانات مباشرة في ملفات الإكسل على سيرفر SCVA عبر HTTP Request، ويُرسل إشعارات بريدية احترافية.",
     "version": "6.1.0",

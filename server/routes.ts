@@ -854,6 +854,34 @@ export async function registerRoutes(
     }
   });
 
+  // ---------- Admin: test Telegram bot ----------
+  app.post("/api/admin/test-telegram", requireAdmin, async (req, res, next) => {
+    try {
+      const { botToken, chatId } = req.body as { botToken?: string; chatId?: string };
+      if (!botToken?.trim() || !chatId?.trim()) {
+        return res.status(400).json({ success: false, message: "التوكن ومعرّف المحادثة مطلوبان" });
+      }
+      const testText =
+        "✅ اختبار بوت SCVA\n\nالبوت يعمل بشكل صحيح!\nالرابطة السورية لأمراض وجراحة القلب 🏥\n\n" +
+        "⏰ " + new Date().toLocaleString("ar-SY", { timeZone: "Asia/Damascus" });
+      const tgRes = await fetch(
+        `https://api.telegram.org/bot${botToken.trim()}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId.trim(), text: testText }),
+        }
+      );
+      const result = (await tgRes.json()) as { ok: boolean; description?: string };
+      if (result.ok) {
+        return res.json({ success: true, message: "✅ تم إرسال رسالة الاختبار بنجاح!" });
+      }
+      return res.json({ success: false, message: result.description || "خطأ من Telegram API" });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // ---------- Form Settings (admin only) ----------
   app.get("/api/form-settings", requireAdmin, async (_req, res, next) => {
     try {
@@ -929,7 +957,16 @@ export async function registerRoutes(
             .replace("'__SCVA_AI_KEY__'", `'${aiApiKey}'`);
         }
 
-        // 5. HTTP append node — inject app URL and API key
+        // 5. Telegram node — inject bot token and chat ID
+        if (node.id === "telegram-notify" && node.parameters?.jsCode) {
+          const tgToken = settings.telegramBotToken || "";
+          const tgChatId = settings.telegramChatId || "";
+          node.parameters.jsCode = node.parameters.jsCode
+            .replace("'__SCVA_TELEGRAM_TOKEN__'", `'${tgToken}'`)
+            .replace("'__SCVA_TELEGRAM_CHAT_ID__'", `'${tgChatId}'`);
+        }
+
+        // 6. HTTP append node — inject app URL and API key
         if (node.id === "append-excel-http" && node.parameters) {
           const appUrl = process.env.REPLIT_DEV_DOMAIN
             ? `https://${process.env.REPLIT_DEV_DOMAIN}`
@@ -955,6 +992,7 @@ export async function registerRoutes(
           apiKey: settings.apiKey ? "✅ مُضمَّن" : "(not set)",
           aiProvider: settings.aiProvider || "openai",
           aiEnabled: settings.aiApiKey ? "✅ مفعَّل" : "❌ غير مُفعَّل",
+          telegramEnabled: settings.telegramBotToken && settings.telegramChatId ? "✅ مفعَّل" : "❌ غير مُفعَّل",
           appUrl: process.env.REPLIT_DEV_DOMAIN
             ? `https://${process.env.REPLIT_DEV_DOMAIN}`
             : "(not set)",
