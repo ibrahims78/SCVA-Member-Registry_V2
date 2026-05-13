@@ -91,7 +91,15 @@ Preferred communication style: Simple, everyday language (Arabic).
 
 A full Arabic code review and a phase-by-phase remediation log are at `docs/CODE_REVIEW.md` (security, TypeScript, performance, code quality, architecture).
 
-## تغييرات الإصدار الأخير (v4.0 — Telegram Notifications)
+## تغييرات الإصدار الأخير (v4.1 — Settings Page Reorganization)
+
+- **إعادة ترتيب صفحة الإعدادات**: ترتيب منطقي ومهني جديد لبطاقات الإعدادات.
+- **الترتيب الجديد**: (1) نموذج التسجيل الخارجي ← (2) الذكاء الاصطناعي ← (3) Telegram ← (4) إدارة المستخدمين ← (5) استيراد البيانات (مدمج) ← (6) تصدير البيانات (مدمج) ← (7) النسخ الاحتياطي.
+- **دمج بطاقات الاستيراد**: بطاقتا "استيراد الأعضاء" و"استيراد الاشتراكات" دُمجتا في بطاقة واحدة "استيراد البيانات" بقسمين منفصلين.
+- **دمج بطاقات التصدير**: بطاقتا "تصدير الأعضاء" و"تصدير الاشتراكات" دُمجتا في بطاقة واحدة "تصدير البيانات" بعمودين متجاورين.
+- **تقليل عدد البطاقات**: من 10 بطاقات إلى 7 بطاقات مع الحفاظ على جميع الوظائف.
+
+## تغييرات الإصدار (v4.0 — Telegram Notifications)
 
 - **حقلان جديدان في DB**: `telegram_bot_token` و `telegram_chat_id` في جدول `form_settings`.
 - **Endpoint جديد**: `POST /api/admin/test-telegram` — يرسل رسالة اختبار فعلية للتحقق من صحة إعدادات البوت.

@@ -70,7 +70,7 @@ export default function Settings() {
   // ---- Localised UI strings ----
   const L = {
     title:        isAr ? "إعدادات النظام" : "System settings",
-    subtitle:     isAr ? "إدارة المستخدمين، استيراد البيانات، والنسخ الاحتياطي." : "Manage users, import data, and backups.",
+    subtitle:     isAr ? "إعداد التكاملات، إدارة البيانات والمستخدمين، والنسخ الاحتياطي." : "Configure integrations, manage data and users, and handle backups.",
     success:      isAr ? "تم النجاح" : "Success",
     error:        isAr ? "خطأ" : "Error",
     // Users
@@ -797,386 +797,6 @@ export default function Settings() {
         <p className="text-muted-foreground mt-1">{L.subtitle}</p>
       </div>
 
-      {/* ===== User Management ===== */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
-          <div>
-            <CardTitle className="text-lg">{L.usersTitle}</CardTitle>
-            <CardDescription>{L.usersDesc}</CardDescription>
-          </div>
-          <Button onClick={startAdd} size="sm">
-            <UserPlus className="ms-2 h-4 w-4" />
-            {L.addUser}
-          </Button>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="rounded-b-lg overflow-hidden border-t">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40">
-                  <TableHead className={`${isAr ? "text-right" : "text-left"} font-semibold`}>{L.username}</TableHead>
-                  <TableHead className={`${isAr ? "text-right" : "text-left"} font-semibold`}>{L.role}</TableHead>
-                  <TableHead className={`${isAr ? "text-left" : "text-right"} font-semibold w-24`}>{L.actions}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users?.map((user) => {
-                  const isSelf = currentUser?.id === user.id;
-                  const isLastAdmin =
-                    user.role === "admin" && adminCount <= 1;
-                  const cannotDelete = isSelf || isLastAdmin;
-                  const deleteTitle = isSelf
-                    ? L.cantDelSelf
-                    : isLastAdmin
-                    ? L.cantDelLast
-                    : L.delUser;
-                  return (
-                    <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
-                      <TableCell className="font-medium">{user.username}</TableCell>
-                      <TableCell>
-                        <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                          {user.role === "admin" ? L.admin : L.employee}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className={isAr ? "text-left" : "text-right"}>
-                        <div className={`flex gap-1 ${isAr ? "justify-end" : "justify-start"}`}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => startEdit(user)}
-                            className="h-8 w-8"
-                            data-testid={`button-edit-user-${user.id}`}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={cannotDelete}
-                            title={deleteTitle}
-                            aria-label={deleteTitle}
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-auto"
-                            onClick={() => {
-                              if (cannotDelete) return;
-                              if (confirm(L.confirmDel)) {
-                                deleteUserMutation.mutate(user.id);
-                              }
-                            }}
-                            data-testid={`button-delete-user-${user.id}`}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ===== Data Import ===== */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
-              <FileSpreadsheet className="h-4 w-4" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">{L.impMembers}</CardTitle>
-              <CardDescription>{L.impMembersD}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-            <p className="text-sm font-medium">{L.steps}</p>
-            <ol className="text-sm text-muted-foreground space-y-1.5 list-decimal list-inside">
-              <li>{L.step1}</li>
-              <li>{L.step2}</li>
-              <li>{L.step3}</li>
-            </ol>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={downloadTemplate} className="gap-2">
-              <Download className="h-4 w-4" />
-              {L.dlTemplate}
-            </Button>
-
-            <div className="relative">
-              <Button
-                variant="default"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isImporting}
-                className="gap-2"
-              >
-                {isImporting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4" />
-                )}
-                {isImporting ? L.importing : L.uploadFile}
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                className="hidden"
-                onChange={handleFileImport}
-              />
-            </div>
-          </div>
-
-          <label className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3 cursor-pointer">
-            <Checkbox
-              id="member-update-existing"
-              checked={memberUpdateExisting}
-              onCheckedChange={(c) => setMemberUpdateExisting(c === true)}
-              data-testid="checkbox-member-update-existing"
-              className="mt-0.5"
-            />
-            <div className="space-y-0.5 text-sm">
-              <span className="font-medium">{L.updExisting}</span>
-              <p className="text-xs text-muted-foreground">{L.updExHelp}</p>
-            </div>
-          </label>
-
-          {importResult && (
-            <div className="rounded-lg border p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-sm">{L.importRes}</p>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setImportResult(null)}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2 text-sm text-emerald-600">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>{L.succeeded} <strong>{importResult.success}</strong></span>
-                </div>
-                {importResult.failed > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>{L.failed} <strong>{importResult.failed}</strong></span>
-                  </div>
-                )}
-                {importResult.updated !== undefined && importResult.updated > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-blue-600">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>{L.updated} <strong>{importResult.updated}</strong></span>
-                  </div>
-                )}
-                {importResult.skipped !== undefined && importResult.skipped > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-amber-600">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>{L.skipped} <strong>{importResult.skipped}</strong></span>
-                  </div>
-                )}
-              </div>
-              {importResult.errors.length > 0 && (
-                <div className="rounded-md bg-destructive/5 border border-destructive/20 p-3 space-y-1 max-h-40 overflow-y-auto">
-                  {importResult.errors.map((e, i) => (
-                    <p key={i} className="text-xs text-destructive font-mono">{e}</p>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ===== Subscriptions Import ===== */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
-              <Receipt className="h-4 w-4" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">{L.impSubs}</CardTitle>
-              <CardDescription>{L.impSubsD}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-            <p className="text-sm font-medium">{L.matchTitle}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
-              <div className="flex items-start gap-2">
-                <span className="text-primary font-bold mt-0.5">①</span>
-                <span><strong>{L.membershipNo}</strong> — {L.matchById}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-primary font-bold mt-0.5">②</span>
-                <span><strong>{L.nameCombo}</strong> — {L.matchByName}</span>
-              </div>
-            </div>
-            <div className="border-t pt-3">
-              <p className="text-sm font-medium mb-1.5">{L.requiredCols}</p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { label: L.fNoOrName, note: L.fNoOrNameD },
-                  { label: L.fYear,     note: L.fYearD },
-                  { label: L.fAmount,   note: L.fAmountD },
-                  { label: L.fDate,     note: L.fDateD },
-                ].map((f) => (
-                  <span key={f.label} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs">
-                    <strong>{f.label}</strong>
-                    <span className="text-muted-foreground">({f.note})</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={downloadSubTemplate} className="gap-2">
-              <Download className="h-4 w-4" />
-              {L.dlSubTpl}
-            </Button>
-            <div className="relative">
-              <Button
-                variant="default"
-                onClick={() => subFileInputRef.current?.click()}
-                disabled={isSubImporting}
-                className="gap-2"
-              >
-                {isSubImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                {isSubImporting ? L.importing : L.uploadSub}
-              </Button>
-              <input
-                ref={subFileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                className="hidden"
-                onChange={handleSubFileImport}
-              />
-            </div>
-          </div>
-
-          <label className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3 cursor-pointer">
-            <Checkbox
-              id="sub-update-existing"
-              checked={subUpdateExisting}
-              onCheckedChange={(c) => setSubUpdateExisting(c === true)}
-              data-testid="checkbox-sub-update-existing"
-              className="mt-0.5"
-            />
-            <div className="space-y-0.5 text-sm">
-              <span className="font-medium">{L.updSubExist}</span>
-              <p className="text-xs text-muted-foreground">{L.updSubHelp}</p>
-            </div>
-          </label>
-
-          {subImportResult && (
-            <div className="rounded-lg border p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-sm">{L.subResults}</p>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSubImportResult(null)}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2 text-sm text-emerald-600">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>{L.succeeded} <strong>{subImportResult.success}</strong></span>
-                </div>
-                {subImportResult.failed > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>{L.failed} <strong>{subImportResult.failed}</strong></span>
-                  </div>
-                )}
-                {subImportResult.updated !== undefined && subImportResult.updated > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-blue-600">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>{L.updated} <strong>{subImportResult.updated}</strong></span>
-                  </div>
-                )}
-                {subImportResult.skipped !== undefined && subImportResult.skipped > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-amber-600">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>{L.skipped} <strong>{subImportResult.skipped}</strong></span>
-                  </div>
-                )}
-              </div>
-              {subImportResult.errors.length > 0 && (
-                <div className="rounded-md bg-destructive/5 border border-destructive/20 p-3 space-y-1 max-h-40 overflow-y-auto">
-                  {subImportResult.errors.map((e, i) => (
-                    <p key={i} className="text-xs text-destructive font-mono">{e}</p>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ===== Members Excel Export ===== */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
-              <FileSpreadsheet className="h-4 w-4" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">{L.expMembers}</CardTitle>
-              <CardDescription>{L.expMembersD}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Button
-            onClick={handleExportMembers}
-            disabled={isExportingMembers}
-            variant="outline"
-            className="gap-2"
-            data-testid="button-export-members"
-          >
-            {isExportingMembers ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-            {isExportingMembers ? L.exporting : L.expMembersBtn}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* ===== Subscriptions Excel Export ===== */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
-              <Receipt className="h-4 w-4" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">{L.expSubs}</CardTitle>
-              <CardDescription>{L.expSubsD}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Button
-            onClick={handleExportSubs}
-            disabled={isExportingSubs}
-            variant="outline"
-            className="gap-2"
-            data-testid="button-export-subscriptions"
-          >
-            {isExportingSubs ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-            {isExportingSubs ? L.exporting : L.expSubsBtn}
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* ===== Registration Form Settings ===== */}
       <Card>
         <CardHeader>
@@ -1840,6 +1460,395 @@ export default function Settings() {
               </Button>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      {/* ===== User Management ===== */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
+          <div>
+            <CardTitle className="text-lg">{L.usersTitle}</CardTitle>
+            <CardDescription>{L.usersDesc}</CardDescription>
+          </div>
+          <Button onClick={startAdd} size="sm">
+            <UserPlus className="ms-2 h-4 w-4" />
+            {L.addUser}
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="rounded-b-lg overflow-hidden border-t">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40">
+                  <TableHead className={`${isAr ? "text-right" : "text-left"} font-semibold`}>{L.username}</TableHead>
+                  <TableHead className={`${isAr ? "text-right" : "text-left"} font-semibold`}>{L.role}</TableHead>
+                  <TableHead className={`${isAr ? "text-left" : "text-right"} font-semibold w-24`}>{L.actions}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users?.map((user) => {
+                  const isSelf = currentUser?.id === user.id;
+                  const isLastAdmin = user.role === "admin" && adminCount <= 1;
+                  const cannotDelete = isSelf || isLastAdmin;
+                  const deleteTitle = isSelf
+                    ? L.cantDelSelf
+                    : isLastAdmin
+                    ? L.cantDelLast
+                    : L.delUser;
+                  return (
+                    <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+                      <TableCell className="font-medium">{user.username}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+                          {user.role === "admin" ? L.admin : L.employee}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className={isAr ? "text-left" : "text-right"}>
+                        <div className={`flex gap-1 ${isAr ? "justify-end" : "justify-start"}`}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startEdit(user)}
+                            className="h-8 w-8"
+                            data-testid={`button-edit-user-${user.id}`}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={cannotDelete}
+                            title={deleteTitle}
+                            aria-label={deleteTitle}
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-auto"
+                            onClick={() => {
+                              if (cannotDelete) return;
+                              if (confirm(L.confirmDel)) {
+                                deleteUserMutation.mutate(user.id);
+                              }
+                            }}
+                            data-testid={`button-delete-user-${user.id}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ===== Data Import (Members + Subscriptions) ===== */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
+              <Upload className="h-4 w-4" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">
+                {isAr ? "استيراد البيانات" : "Import Data"}
+              </CardTitle>
+              <CardDescription>
+                {isAr
+                  ? "استيراد بيانات الأعضاء والاشتراكات من ملفات Excel دفعةً واحدة."
+                  : "Import members and subscriptions from Excel files in bulk."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+
+          {/* ── Members Import ── */}
+          <div className="space-y-5">
+            <div className="flex items-center gap-2 pb-1">
+              <FileSpreadsheet className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold text-sm">{L.impMembers}</h3>
+              <Badge variant="outline" className="text-xs ms-1">
+                {isAr ? "أعضاء" : "Members"}
+              </Badge>
+            </div>
+
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+              <p className="text-sm font-medium">{L.steps}</p>
+              <ol className="text-sm text-muted-foreground space-y-1.5 list-decimal list-inside">
+                <li>{L.step1}</li>
+                <li>{L.step2}</li>
+                <li>{L.step3}</li>
+              </ol>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={downloadTemplate} className="gap-2">
+                <Download className="h-4 w-4" />
+                {L.dlTemplate}
+              </Button>
+              <div className="relative">
+                <Button
+                  variant="default"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isImporting}
+                  className="gap-2"
+                >
+                  {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {isImporting ? L.importing : L.uploadFile}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleFileImport}
+                />
+              </div>
+            </div>
+
+            <label className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3 cursor-pointer">
+              <Checkbox
+                id="member-update-existing"
+                checked={memberUpdateExisting}
+                onCheckedChange={(c) => setMemberUpdateExisting(c === true)}
+                data-testid="checkbox-member-update-existing"
+                className="mt-0.5"
+              />
+              <div className="space-y-0.5 text-sm">
+                <span className="font-medium">{L.updExisting}</span>
+                <p className="text-xs text-muted-foreground">{L.updExHelp}</p>
+              </div>
+            </label>
+
+            {importResult && (
+              <div className="rounded-lg border p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-sm">{L.importRes}</p>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setImportResult(null)}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="flex gap-4 flex-wrap">
+                  <div className="flex items-center gap-2 text-sm text-emerald-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>{L.succeeded} <strong>{importResult.success}</strong></span>
+                  </div>
+                  {importResult.failed > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{L.failed} <strong>{importResult.failed}</strong></span>
+                    </div>
+                  )}
+                  {importResult.updated !== undefined && importResult.updated > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-blue-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>{L.updated} <strong>{importResult.updated}</strong></span>
+                    </div>
+                  )}
+                  {importResult.skipped !== undefined && importResult.skipped > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{L.skipped} <strong>{importResult.skipped}</strong></span>
+                    </div>
+                  )}
+                </div>
+                {importResult.errors.length > 0 && (
+                  <div className="rounded-md bg-destructive/5 border border-destructive/20 p-3 space-y-1 max-h-40 overflow-y-auto">
+                    {importResult.errors.map((e, i) => (
+                      <p key={i} className="text-xs text-destructive font-mono">{e}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t" />
+
+          {/* ── Subscriptions Import ── */}
+          <div className="space-y-5">
+            <div className="flex items-center gap-2 pb-1">
+              <Receipt className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold text-sm">{L.impSubs}</h3>
+              <Badge variant="outline" className="text-xs ms-1">
+                {isAr ? "اشتراكات" : "Subscriptions"}
+              </Badge>
+            </div>
+
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+              <p className="text-sm font-medium">{L.matchTitle}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                <div className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">①</span>
+                  <span><strong>{L.membershipNo}</strong> — {L.matchById}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">②</span>
+                  <span><strong>{L.nameCombo}</strong> — {L.matchByName}</span>
+                </div>
+              </div>
+              <div className="border-t pt-3">
+                <p className="text-sm font-medium mb-1.5">{L.requiredCols}</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: L.fNoOrName, note: L.fNoOrNameD },
+                    { label: L.fYear,     note: L.fYearD },
+                    { label: L.fAmount,   note: L.fAmountD },
+                    { label: L.fDate,     note: L.fDateD },
+                  ].map((f) => (
+                    <span key={f.label} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs">
+                      <strong>{f.label}</strong>
+                      <span className="text-muted-foreground">({f.note})</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={downloadSubTemplate} className="gap-2">
+                <Download className="h-4 w-4" />
+                {L.dlSubTpl}
+              </Button>
+              <div className="relative">
+                <Button
+                  variant="default"
+                  onClick={() => subFileInputRef.current?.click()}
+                  disabled={isSubImporting}
+                  className="gap-2"
+                >
+                  {isSubImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {isSubImporting ? L.importing : L.uploadSub}
+                </Button>
+                <input
+                  ref={subFileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleSubFileImport}
+                />
+              </div>
+            </div>
+
+            <label className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3 cursor-pointer">
+              <Checkbox
+                id="sub-update-existing"
+                checked={subUpdateExisting}
+                onCheckedChange={(c) => setSubUpdateExisting(c === true)}
+                data-testid="checkbox-sub-update-existing"
+                className="mt-0.5"
+              />
+              <div className="space-y-0.5 text-sm">
+                <span className="font-medium">{L.updSubExist}</span>
+                <p className="text-xs text-muted-foreground">{L.updSubHelp}</p>
+              </div>
+            </label>
+
+            {subImportResult && (
+              <div className="rounded-lg border p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-sm">{L.subResults}</p>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSubImportResult(null)}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="flex gap-4 flex-wrap">
+                  <div className="flex items-center gap-2 text-sm text-emerald-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>{L.succeeded} <strong>{subImportResult.success}</strong></span>
+                  </div>
+                  {subImportResult.failed > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{L.failed} <strong>{subImportResult.failed}</strong></span>
+                    </div>
+                  )}
+                  {subImportResult.updated !== undefined && subImportResult.updated > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-blue-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>{L.updated} <strong>{subImportResult.updated}</strong></span>
+                    </div>
+                  )}
+                  {subImportResult.skipped !== undefined && subImportResult.skipped > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{L.skipped} <strong>{subImportResult.skipped}</strong></span>
+                    </div>
+                  )}
+                </div>
+                {subImportResult.errors.length > 0 && (
+                  <div className="rounded-md bg-destructive/5 border border-destructive/20 p-3 space-y-1 max-h-40 overflow-y-auto">
+                    {subImportResult.errors.map((e, i) => (
+                      <p key={i} className="text-xs text-destructive font-mono">{e}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+        </CardContent>
+      </Card>
+
+      {/* ===== Data Export (Members + Subscriptions) ===== */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
+              <Download className="h-4 w-4" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">
+                {isAr ? "تصدير البيانات" : "Export Data"}
+              </CardTitle>
+              <CardDescription>
+                {isAr
+                  ? "تصدير قوائم الأعضاء والاشتراكات إلى ملفات Excel."
+                  : "Export member lists and subscriptions to Excel files."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Members Export */}
+            <div className="space-y-2">
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
+                {L.expMembers}
+              </p>
+              <p className="text-xs text-muted-foreground">{L.expMembersD}</p>
+              <Button
+                onClick={handleExportMembers}
+                disabled={isExportingMembers}
+                variant="outline"
+                className="gap-2 w-full"
+                data-testid="button-export-members"
+              >
+                {isExportingMembers ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {isExportingMembers ? L.exporting : L.expMembersBtn}
+              </Button>
+            </div>
+            {/* Subscriptions Export */}
+            <div className="space-y-2">
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <Receipt className="h-3.5 w-3.5 text-primary" />
+                {L.expSubs}
+              </p>
+              <p className="text-xs text-muted-foreground">{L.expSubsD}</p>
+              <Button
+                onClick={handleExportSubs}
+                disabled={isExportingSubs}
+                variant="outline"
+                className="gap-2 w-full"
+                data-testid="button-export-subscriptions"
+              >
+                {isExportingSubs ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {isExportingSubs ? L.exporting : L.expSubsBtn}
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
