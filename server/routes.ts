@@ -1058,19 +1058,28 @@ export async function registerRoutes(
       }
 
       const data = req.body as Record<string, unknown>;
-      const lang = String(data.language ?? "ar") === "en" ? "en" : "ar";
 
       const XLSX = await import("xlsx");
       const fsModule = await import("fs");
       const pathModule = await import("path");
 
       const excelDir = pathModule.resolve(process.cwd(), "docs/form_by_n8n");
-      const fileName = lang === "ar" ? "نموذج-الأعضاء-عربي.xlsx" : "SCVA-Members-Template-EN.xlsx";
-      const filePath = pathModule.join(excelDir, fileName);
+      const clean = (v: unknown) => (v != null ? String(v).trim() : "");
 
-      let wb: ReturnType<typeof XLSX.default.read>;
-      let ws: ReturnType<typeof XLSX.default.utils.aoa_to_sheet>;
-      let sheetName: string;
+      // ── Translation maps — ensures both files always get correct labels ──
+      const AR_GENDER:     Record<string, string> = { male: "ذكر",              female: "أنثى" };
+      const AR_SPECIALTY:  Record<string, string> = { cardiology: "قلبية داخلية", cardiac_surgery: "جراحة قلب" };
+      const AR_MEMBERSHIP: Record<string, string> = { original: "عضو أصيل",     associate: "عضو مشارك" };
+      const EN_GENDER:     Record<string, string> = { male: "Male",              female: "Female" };
+      const EN_SPECIALTY:  Record<string, string> = { cardiology: "Cardiology",  cardiac_surgery: "Cardiac Surgery" };
+      const EN_MEMBERSHIP: Record<string, string> = { original: "Original Member", associate: "Associate Member" };
+
+      // Raw keys are always available from the format-data n8n node
+      const gRaw = clean(data.genderRaw         ?? data.gender).toLowerCase();
+      const sRaw = clean(data.specialtyRaw       ?? data.specialty).toLowerCase();
+      const mRaw = clean(data.membershipTypeRaw  ?? data.membershipType).toLowerCase();
+
+      const submittedAt = clean(data.submittedAt ?? new Date().toISOString());
 
       const AR_HEADERS = [
         "الاسم الأول", "الكنية", "الاسم بالعربية", "اسم الأب",
@@ -1084,112 +1093,99 @@ export async function registerRoutes(
         "Email", "Phone", "City", "Work address",
         "Join date", "Membership type", "ESC ID", "Submitted at",
       ];
-      const headers = lang === "ar" ? AR_HEADERS : EN_HEADERS;
 
-      if (fsModule.default.existsSync(filePath)) {
-        const buf = fsModule.default.readFileSync(filePath);
-        wb = XLSX.default.read(buf, { type: "buffer" });
-        sheetName = wb.SheetNames[0];
-        ws = wb.Sheets[sheetName];
-        const existingRows = XLSX.default.utils.sheet_to_json(ws, { header: 1 }) as unknown[][];
+      const arRow = [
+        clean(data.firstName),   clean(data.lastName),    clean(data.fullName),
+        clean(data.fatherName),  clean(data.englishName), clean(data.birthDate),
+        AR_GENDER[gRaw]     || clean(data.gender),
+        AR_SPECIALTY[sRaw]  || clean(data.specialty),
+        clean(data.email),       clean(data.phone),       clean(data.city),
+        clean(data.workAddress), clean(data.joinDate),
+        AR_MEMBERSHIP[mRaw] || clean(data.membershipType),
+        clean(data.escId),       submittedAt,
+      ];
+      const enRow = [
+        clean(data.firstName),   clean(data.lastName),    clean(data.fullName),
+        clean(data.fatherName),  clean(data.englishName), clean(data.birthDate),
+        EN_GENDER[gRaw]     || clean(data.genderRaw     ?? data.gender),
+        EN_SPECIALTY[sRaw]  || clean(data.specialtyRaw  ?? data.specialty),
+        clean(data.email),       clean(data.phone),       clean(data.city),
+        clean(data.workAddress), clean(data.joinDate),
+        EN_MEMBERSHIP[mRaw] || clean(data.membershipTypeRaw ?? data.membershipType),
+        clean(data.escId),       submittedAt,
+      ];
 
-        // ── Duplicate detection ──────────────────────────────────────────────
-        if (existingRows.length > 1) {
-          const incomingEmail = String(data.email ?? "").trim().toLowerCase();
-          const incomingFullName = String(data.fullName ?? "").trim();
-          const incomingEnName = String(data.englishName ?? "").trim();
-          const incomingFirst = String(data.firstName ?? "").trim();
-          const incomingLast = String(data.lastName ?? "").trim();
+      const arFilePath = pathModule.join(excelDir, "نموذج-الأعضاء-عربي.xlsx");
+      const enFilePath = pathModule.join(excelDir, "SCVA-Members-Template-EN.xlsx");
 
-          for (const row of existingRows.slice(1) as unknown[][]) {
-            const rowEmail    = row[8]  != null ? String(row[8]).trim().toLowerCase()  : "";
-            const rowFullName = row[2]  != null ? String(row[2]).trim()  : "";
-            const rowEnName   = row[4]  != null ? String(row[4]).trim()  : "";
-            const rowFirst    = row[0]  != null ? String(row[0]).trim()  : "";
-            const rowLast     = row[1]  != null ? String(row[1]).trim()  : "";
+      // Helper: load existing workbook or create a fresh one with headers
+      const loadOrCreate = (filePath: string, headers: string[], sheetName: string) => {
+        if (fsModule.default.existsSync(filePath)) {
+          const buf = fsModule.default.readFileSync(filePath);
+          const wb = XLSX.default.read(buf, { type: "buffer" });
+          const sn = wb.SheetNames[0];
+          const ws = wb.Sheets[sn];
+          const rows = XLSX.default.utils.sheet_to_json(ws, { header: 1 }) as unknown[][];
+          if (rows.length === 0) {
+            const freshWs = XLSX.default.utils.aoa_to_sheet([headers]);
+            wb.Sheets[sn] = freshWs;
+            return { wb, ws: freshWs, rows: [headers] as unknown[][] };
+          }
+          return { wb, ws, rows };
+        }
+        const wb = XLSX.default.utils.book_new();
+        const ws = XLSX.default.utils.aoa_to_sheet([headers]);
+        XLSX.default.utils.book_append_sheet(wb, ws, sheetName);
+        return { wb, ws, rows: [headers] as unknown[][] };
+      };
 
-            const emailMatch = incomingEmail && rowEmail && rowEmail === incomingEmail;
-            const nameMatch  =
-              !incomingEmail &&
-              incomingFirst && rowFirst === incomingFirst &&
-              incomingLast  && rowLast  === incomingLast  &&
-              ((!incomingFullName && !rowFullName) || rowFullName === incomingFullName) &&
-              ((!incomingEnName  && !rowEnName)   || rowEnName   === incomingEnName);
+      // ── Duplicate detection (checks Arabic file — primary source of truth) ──
+      const { wb: arWb, ws: arWs, rows: arRows } = loadOrCreate(arFilePath, AR_HEADERS, "الأعضاء");
+      if (arRows.length > 1) {
+        const inEmail    = String(data.email       ?? "").trim().toLowerCase();
+        const inFullName = String(data.fullName    ?? "").trim();
+        const inEnName   = String(data.englishName ?? "").trim();
+        const inFirst    = String(data.firstName   ?? "").trim();
+        const inLast     = String(data.lastName    ?? "").trim();
 
-            if (emailMatch || nameMatch) {
-              console.log(`[EXCEL] تم رفض تسجيل مكرر: ${incomingEmail || incomingFullName}`);
-              return res.json({
-                success: true,
-                isDuplicate: true,
-                message: "هذا العضو مسجّل مسبقاً في الملف — لم تتم الإضافة.",
-                file: fileName,
-              });
-            }
+        for (const row of arRows.slice(1) as unknown[][]) {
+          const rowEmail    = row[8] != null ? String(row[8]).trim().toLowerCase() : "";
+          const rowFullName = row[2] != null ? String(row[2]).trim()               : "";
+          const rowEnName   = row[4] != null ? String(row[4]).trim()               : "";
+          const rowFirst    = row[0] != null ? String(row[0]).trim()               : "";
+          const rowLast     = row[1] != null ? String(row[1]).trim()               : "";
+
+          const emailMatch = inEmail && rowEmail && rowEmail === inEmail;
+          const nameMatch  =
+            !inEmail &&
+            inFirst && rowFirst === inFirst && inLast && rowLast === inLast &&
+            ((!inFullName && !rowFullName) || rowFullName === inFullName) &&
+            ((!inEnName   && !rowEnName)   || rowEnName   === inEnName);
+
+          if (emailMatch || nameMatch) {
+            console.log(`[EXCEL] تم رفض تسجيل مكرر: ${inEmail || inFullName}`);
+            return res.json({ success: true, isDuplicate: true, message: "هذا العضو مسجّل مسبقاً في الملف — لم تتم الإضافة." });
           }
         }
-        // ────────────────────────────────────────────────────────────────────
-
-        // If the sheet is empty (no data at all), initialize it with the header row
-        if (existingRows.length === 0) {
-          ws = XLSX.default.utils.aoa_to_sheet([headers]);
-          wb.Sheets[sheetName] = ws;
-        }
-      } else {
-        wb = XLSX.default.utils.book_new();
-        sheetName = lang === "ar" ? "الأعضاء" : "Members";
-        ws = XLSX.default.utils.aoa_to_sheet([headers]);
-        XLSX.default.utils.book_append_sheet(wb, ws, sheetName);
       }
+      // ─────────────────────────────────────────────────────────────────────
 
-      const clean = (v: unknown) => (v != null ? String(v).trim() : "");
+      // Write to Arabic file (wb/ws already loaded above — reuse them)
+      XLSX.default.utils.sheet_add_aoa(arWs, [arRow], { origin: -1 });
+      fsModule.default.writeFileSync(arFilePath, XLSX.default.write(arWb, { type: "buffer", bookType: "xlsx" }));
 
-      let newRow: unknown[];
-      if (lang === "ar") {
-        newRow = [
-          clean(data.firstName),
-          clean(data.lastName),
-          clean(data.fullName),
-          clean(data.fatherName),
-          clean(data.englishName),
-          clean(data.birthDate),
-          clean(data.gender),
-          clean(data.specialty),
-          clean(data.email),
-          clean(data.phone),
-          clean(data.city),
-          clean(data.workAddress),
-          clean(data.joinDate),
-          clean(data.membershipType),
-          clean(data.escId),
-          clean(data.submittedAt ?? new Date().toISOString()),
-        ];
-      } else {
-        newRow = [
-          clean(data.firstName),
-          clean(data.lastName),
-          clean(data.fullName),
-          clean(data.fatherName),
-          clean(data.englishName),
-          clean(data.birthDate),
-          clean(data.genderRaw ?? data.gender),
-          clean(data.specialtyRaw ?? data.specialty),
-          clean(data.email),
-          clean(data.phone),
-          clean(data.city),
-          clean(data.workAddress),
-          clean(data.joinDate),
-          clean(data.membershipTypeRaw ?? data.membershipType),
-          clean(data.escId),
-          clean(data.submittedAt ?? new Date().toISOString()),
-        ];
-      }
+      // Write to English file
+      const { wb: enWb, ws: enWs } = loadOrCreate(enFilePath, EN_HEADERS, "Members");
+      XLSX.default.utils.sheet_add_aoa(enWs, [enRow], { origin: -1 });
+      fsModule.default.writeFileSync(enFilePath, XLSX.default.write(enWb, { type: "buffer", bookType: "xlsx" }));
 
-      XLSX.default.utils.sheet_add_aoa(ws, [newRow], { origin: -1 });
-      const outBuf = XLSX.default.write(wb, { type: "buffer", bookType: "xlsx" });
-      fsModule.default.writeFileSync(filePath, outBuf);
-
-      console.log(`[EXCEL] أُضيف صف جديد إلى ${fileName}`);
-      res.json({ success: true, message: "تمت إضافة البيانات إلى ملف الإكسل بنجاح", file: fileName });
+      console.log(`[EXCEL] أُضيف صف جديد إلى الملفين: نموذج-الأعضاء-عربي.xlsx + SCVA-Members-Template-EN.xlsx`);
+      res.json({
+        success: true,
+        isDuplicate: false,
+        message: "تمت إضافة البيانات إلى ملفَي الإكسل بنجاح (عربي وإنجليزي)",
+        files: ["نموذج-الأعضاء-عربي.xlsx", "SCVA-Members-Template-EN.xlsx"],
+      });
     } catch (err) {
       next(err);
     }
