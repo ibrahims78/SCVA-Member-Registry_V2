@@ -1170,14 +1170,56 @@ export async function registerRoutes(
 
       // Write to Arabic file (wb/ws already loaded above — reuse them)
       XLSX.default.utils.sheet_add_aoa(arWs, [arRow], { origin: -1 });
-      fsModule.default.writeFileSync(arFilePath, XLSX.default.write(arWb, { type: "buffer", bookType: "xlsx" }));
+      const arBuffer = XLSX.default.write(arWb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+      fsModule.default.writeFileSync(arFilePath, arBuffer);
 
       // Write to English file
       const { wb: enWb, ws: enWs } = loadOrCreate(enFilePath, EN_HEADERS, "Members");
       XLSX.default.utils.sheet_add_aoa(enWs, [enRow], { origin: -1 });
-      fsModule.default.writeFileSync(enFilePath, XLSX.default.write(enWb, { type: "buffer", bookType: "xlsx" }));
+      const enBuffer = XLSX.default.write(enWb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+      fsModule.default.writeFileSync(enFilePath, enBuffer);
 
-      console.log(`[EXCEL] أُضيف صف جديد إلى الملفين: نموذج-الأعضاء-عربي.xlsx + SCVA-Members-Template-EN.xlsx`);
+      // Count data rows (excluding header) to decide whether to send to Telegram
+      const dataRowCount = arRows.length; // arRows already includes header + existing rows before this insert
+      const totalAfterInsert = dataRowCount; // new row was appended above
+
+      console.log(`[EXCEL] أُضيف صف جديد إلى الملفين — إجمالي البيانات: ${totalAfterInsert - 1} عضو`);
+
+      // ── Auto-send to Telegram every 10 entries ──
+      const tgToken = settings.telegramBotToken?.trim() || "";
+      const tgChat  = settings.telegramChatId?.trim()   || "";
+
+      if (tgToken && tgChat && (totalAfterInsert - 1) % 10 === 0 && totalAfterInsert > 1) {
+        // Fire-and-forget — don't block the HTTP response
+        (async () => {
+          try {
+            const count = totalAfterInsert - 1;
+            const tgBase = `https://api.telegram.org/bot${tgToken}`;
+
+            // Helper: send one document via multipart/form-data using fetch + FormData
+            const sendDoc = async (buf: Buffer, filename: string, caption: string) => {
+              const form = new FormData();
+              form.append("chat_id", tgChat);
+              form.append("caption", caption);
+              form.append("document", new Blob([buf], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              }), filename);
+              const r = await fetch(`${tgBase}/sendDocument`, { method: "POST", body: form });
+              return r.json();
+            };
+
+            const caption = `📊 *تقرير تلقائي — SCVA*\n✅ تم تسجيل *${count}* عضواً حتى الآن\n⏰ ${new Date().toLocaleString("ar-SY", { timeZone: "Asia/Damascus" })}`;
+
+            await sendDoc(arBuffer, "نموذج-الأعضاء-عربي.xlsx", caption);
+            await sendDoc(enBuffer, "SCVA-Members-EN.xlsx", caption);
+
+            console.log(`[TELEGRAM] ✅ تم إرسال ملفَي Excel تلقائياً بعد ${count} إدخال`);
+          } catch (tgErr) {
+            console.error("[TELEGRAM] ❌ فشل إرسال ملفات Excel:", (tgErr as Error).message);
+          }
+        })();
+      }
+
       res.json({
         success: true,
         isDuplicate: false,
