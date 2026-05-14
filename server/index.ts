@@ -59,6 +59,10 @@ app.use((req, res, next) => {
   // so cross-origin POSTs cannot escalate privileges via CSRF here.
   if (req.path === "/api/login") return next();
 
+  // /api/public/* routes use API-key authentication (not cookies),
+  // so they are safe to accept from external origins (e.g. n8n webhooks).
+  if (req.path.startsWith("/api/public/")) return next();
+
   const origin = req.get("origin");
   const referer = req.get("referer");
   const host = req.get("host");
