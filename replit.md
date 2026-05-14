@@ -107,7 +107,7 @@ A full Arabic code review and a phase-by-phase remediation log are at `docs/CODE
 - **حقن تلقائي**: عند تحميل ملف Workflow، يُستبدل `'__SCVA_TELEGRAM_TOKEN__'` و `'__SCVA_TELEGRAM_CHAT_ID__'` بالقيم الفعلية المحفوظة.
 - **Skip graceful**: إذا لم تُضبط إعدادات Telegram، تُتجاوز العقدة تلقائياً دون إيقاف الـ workflow.
 - **صفحة الإعدادات**: بطاقة "إشعارات Telegram" جديدة مع حقلَي التوكن ومعرّف المحادثة، زر اختبار، وزر حفظ.
-- **Workflow v4.1**: تحديث الاتصالات — `Build Email HTML → Telegram → Email Admin → Member has email?` — Telegram تُنفَّذ أولاً لضمان وصول الإشعار حتى لو فشل إرسال الإيميل.
+- **Workflow v4.0**: تحديث الاتصالات — `Email Admin → Telegram → Member has email?` — وتحديث مواضع العقد اللاحقة.
 
 ## تغييرات الإصدار (v2.5 — AI Integration)
 

@@ -1185,10 +1185,40 @@ export async function registerRoutes(
 
       console.log(`[EXCEL] أُضيف صف جديد إلى الملفين — إجمالي البيانات: ${totalAfterInsert - 1} عضو`);
 
-      // ── Auto-send to Telegram every 10 entries ──
       const tgToken = settings.telegramBotToken?.trim() || "";
       const tgChat  = settings.telegramChatId?.trim()   || "";
 
+      // ── Immediate notification for every new registration ──
+      if (tgToken && tgChat) {
+        (async () => {
+          try {
+            const c = (v: unknown) => (v != null ? String(v).trim() : "—") || "—";
+            const memberCount = totalAfterInsert - 1;
+            const text =
+              `🔔 <b>تسجيل عضو جديد — الرابطة السورية لأمراض وجراحة القلب</b>\n\n` +
+              `👤 <b>الاسم:</b> ${c(data.fullName)}\n` +
+              `🔤 <b>English:</b> ${c(data.englishName)}\n` +
+              `🏥 <b>التخصص:</b> ${c(data.specialty)}\n` +
+              `🎫 <b>العضوية:</b> ${c(data.membershipType)}\n` +
+              `📍 <b>المدينة:</b> ${c(data.city)}\n` +
+              `📞 <b>الهاتف:</b> ${c(data.phone)}\n` +
+              `📧 <b>البريد:</b> ${c(data.email) !== "—" ? c(data.email) : "—"}\n\n` +
+              `📊 <b>إجمالي الأعضاء المسجَّلين:</b> ${memberCount}\n` +
+              `⏰ <i>${new Date().toLocaleString("ar-SY", { timeZone: "Asia/Damascus" })}</i>`;
+
+            await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ chat_id: tgChat, text, parse_mode: "HTML" }),
+            });
+            console.log(`[TELEGRAM] ✅ تم إرسال إشعار التسجيل الجديد: ${c(data.fullName) || c(data.englishName)}`);
+          } catch (tgErr) {
+            console.error("[TELEGRAM] ❌ فشل إرسال إشعار التسجيل:", (tgErr as Error).message);
+          }
+        })();
+      }
+
+      // ── Auto-send Excel files to Telegram every 10 entries ──
       if (tgToken && tgChat && (totalAfterInsert - 1) % 10 === 0 && totalAfterInsert > 1) {
         // Fire-and-forget — don't block the HTTP response
         (async () => {

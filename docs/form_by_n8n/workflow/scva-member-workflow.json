@@ -102,7 +102,7 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        2660,
+        2440,
         300
       ]
     },
@@ -115,7 +115,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2440,
+        2660,
         300
       ]
     },
@@ -404,17 +404,6 @@
       "main": [
         [
           {
-            "node": "Telegram — إشعار المسؤول",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Telegram — إشعار المسؤول": {
-      "main": [
-        [
-          {
             "node": "Email Admin — Notification",
             "type": "main",
             "index": 0
@@ -423,6 +412,17 @@
       ]
     },
     "Email Admin — Notification": {
+      "main": [
+        [
+          {
+            "node": "Telegram — إشعار المسؤول",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram — إشعار المسؤول": {
       "main": [
         [
           {
