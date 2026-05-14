@@ -903,9 +903,12 @@ export async function registerRoutes(
   });
 
   // ---------- Admin: download n8n workflow with injected settings ----------
-  app.get("/api/admin/workflow", requireAdmin, async (_req, res, next) => {
+  app.get("/api/admin/workflow", requireAdmin, async (req, res, next) => {
     try {
       const settings = await storage.getFormSettings();
+      const proto = req.get("x-forwarded-proto") || req.protocol || "https";
+      const host = req.get("x-forwarded-host") || req.get("host") || "";
+      const appUrl = host ? `${proto}://${host}` : "";
 
       const workflowPath = path.resolve(
         process.cwd(),
@@ -965,9 +968,6 @@ export async function registerRoutes(
 
         // 6. HTTP append node — inject app URL and API key
         if (node.id === "append-excel-http" && node.parameters) {
-          const proto = req.get("x-forwarded-proto") || req.protocol || "https";
-          const host = req.get("x-forwarded-host") || req.get("host") || "";
-          const appUrl = host ? `${proto}://${host}` : "";
           if (appUrl) {
             node.parameters.url = `${appUrl}/api/public/append-excel`;
           }
