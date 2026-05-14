@@ -338,7 +338,7 @@
     }
   ],
   "connections": {
-    "Webhook — Receive Registration": {
+    "Webhook — Receive Data Update": {
       "main": [
         [
           {
