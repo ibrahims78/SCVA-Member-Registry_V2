@@ -965,9 +965,9 @@ export async function registerRoutes(
 
         // 6. HTTP append node — inject app URL and API key
         if (node.id === "append-excel-http" && node.parameters) {
-          const appUrl = process.env.REPLIT_DEV_DOMAIN
-            ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-            : "";
+          const proto = req.get("x-forwarded-proto") || req.protocol || "https";
+          const host = req.get("x-forwarded-host") || req.get("host") || "";
+          const appUrl = host ? `${proto}://${host}` : "";
           if (appUrl) {
             node.parameters.url = `${appUrl}/api/public/append-excel`;
           }
@@ -990,9 +990,7 @@ export async function registerRoutes(
           aiProvider: settings.aiProvider || "openai",
           aiEnabled: settings.aiApiKey ? "✅ مفعَّل" : "❌ غير مُفعَّل",
           telegramEnabled: settings.telegramBotToken && settings.telegramChatId ? "✅ مفعَّل" : "❌ غير مُفعَّل",
-          appUrl: process.env.REPLIT_DEV_DOMAIN
-            ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-            : "(not set)",
+          appUrl: appUrl || "(not set)",
           note: "Only SMTP credentials need to be set manually in n8n.",
         };
       }
