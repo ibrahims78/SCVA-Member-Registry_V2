@@ -65,18 +65,33 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeAdmin() {
     try {
+      const envPassword = process.env.ADMIN_INITIAL_PASSWORD;
+      const isEnvPasswordValid =
+        typeof envPassword === "string" && envPassword.length >= 8;
+
       const adminExists = await this.getUserByUsername("admin");
-      if (adminExists) return;
+
+      // If admin already exists and ADMIN_INITIAL_PASSWORD is explicitly set,
+      // reset the password so the operator can regain access.
+      if (adminExists) {
+        if (isEnvPasswordValid) {
+          const hashedPassword = await bcrypt.hash(envPassword, 10);
+          await db
+            .update(users)
+            .set({ password: hashedPassword, mustChangePassword: true })
+            .where(eq(users.username, "admin"));
+          console.error(
+            "[STORAGE] تم إعادة تعيين كلمة مرور admin من ADMIN_INITIAL_PASSWORD. سيُطلب تغييرها عند أول دخول.",
+          );
+        }
+        return;
+      }
 
       // Choose the initial password:
       //   1. If ADMIN_INITIAL_PASSWORD is set and >= 8 chars  → use it (CI/CD).
       //   2. Otherwise generate a strong random one and print it ONCE to stderr.
       // We never fall back to a hard-coded literal, and we never persist the
       // plaintext password anywhere except hashed in the database.
-      const envPassword = process.env.ADMIN_INITIAL_PASSWORD;
-      const isEnvPasswordValid =
-        typeof envPassword === "string" && envPassword.length >= 8;
-
       const initialPassword = isEnvPasswordValid
         ? envPassword
         : generateRandomPassword(24);
