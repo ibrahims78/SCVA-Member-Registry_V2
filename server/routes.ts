@@ -966,11 +966,14 @@ export async function registerRoutes(
             .replace("'__SCVA_TELEGRAM_CHAT_ID__'", `'${tgChatId}'`);
         }
 
-        // 6. HTTP append node — inject app URL and API key
+        // 6. HTTP append node — inject app URL with API key as query param
         if (node.id === "append-excel-http" && node.parameters) {
-          if (appUrl) {
+          if (appUrl && settings.apiKey) {
+            node.parameters.url = `${appUrl}/api/public/append-excel?key=${settings.apiKey}`;
+          } else if (appUrl) {
             node.parameters.url = `${appUrl}/api/public/append-excel`;
           }
+          // Also inject into Authorization header as fallback
           if (node.parameters.headerParameters?.parameters) {
             for (const h of node.parameters.headerParameters.parameters) {
               if (h.name === "Authorization") {
@@ -1039,11 +1042,13 @@ export async function registerRoutes(
   });
 
   // ---------- Public: append member row to Excel file (called by n8n) ----------
-  // Authentication: Bearer token = apiKey from form settings
+  // Authentication: Bearer token (Authorization header) OR ?key= query param
   app.post("/api/public/append-excel", async (req, res, next) => {
     try {
       const authHeader = req.headers.authorization ?? "";
-      const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+      const tokenFromHeader = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+      const tokenFromQuery = String(req.query.key ?? "").trim();
+      const token = tokenFromHeader || tokenFromQuery;
       const settings = await storage.getFormSettings();
 
       if (!token || token !== settings.apiKey) {
