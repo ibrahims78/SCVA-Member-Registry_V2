@@ -1231,7 +1231,111 @@ export async function registerRoutes(
     }
   });
 
-  // ---------- Admin: download current Excel file ----------
+  // ---------- Admin: clear both Excel files (reset to headers only) ----------
+  app.post("/api/admin/clear-excel", requireAdmin, async (_req, res, next) => {
+    try {
+      const XLSX     = await import("xlsx");
+      const fsModule = await import("fs");
+      const pathModule = await import("path");
+      const excelDir = pathModule.resolve(process.cwd(), "docs/form_by_n8n");
+
+      const AR_HEADERS = [
+        "الاسم الأول","الكنية","الاسم بالعربية","اسم الأب",
+        "الاسم بالإنجليزية","تاريخ الميلاد","الجنس","التخصص",
+        "البريد الإلكتروني","رقم الهاتف","المدينة","عنوان العمل",
+        "تاريخ الانضمام","نوع العضوية","معرّف الجمعية الأوروبية","تاريخ التسجيل",
+      ];
+      const EN_HEADERS = [
+        "First name","Last name","Full name (Arabic)","Father's name",
+        "Full name (English)","Date of birth","Gender","Specialty",
+        "Email","Phone","City","Work address",
+        "Join date","Membership type","ESC ID","Submitted at",
+      ];
+
+      const files = [
+        { name: "نموذج-الأعضاء-عربي.xlsx",       headers: AR_HEADERS, sheet: "الأعضاء" },
+        { name: "SCVA-Members-Template-EN.xlsx", headers: EN_HEADERS, sheet: "Members"  },
+      ];
+
+      for (const { name, headers, sheet } of files) {
+        const wb = XLSX.default.utils.book_new();
+        const ws = XLSX.default.utils.aoa_to_sheet([headers]);
+        XLSX.default.utils.book_append_sheet(wb, ws, sheet);
+        fsModule.default.writeFileSync(
+          pathModule.join(excelDir, name),
+          XLSX.default.write(wb, { type: "buffer", bookType: "xlsx" }),
+        );
+      }
+
+      console.log("[EXCEL] تم مسح بيانات الملفَين وإعادتهما للترويسات فقط");
+      res.json({ success: true, message: "تم مسح بيانات ملفَي Excel بنجاح" });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // ---------- Admin: manually send both Excel files to Telegram ----------
+  app.post("/api/admin/send-excel-telegram", requireAdmin, async (_req, res, next) => {
+    try {
+      const settings = await storage.getFormSettings();
+      const tgToken  = settings.telegramBotToken?.trim() || "";
+      const tgChat   = settings.telegramChatId?.trim()   || "";
+
+      if (!tgToken || !tgChat) {
+        return res.status(400).json({ success: false, message: "إعدادات Telegram غير مضبوطة. أدخل التوكن ومعرّف المحادثة واحفظهما أولاً." });
+      }
+
+      const XLSX     = await import("xlsx");
+      const fsModule = await import("fs");
+      const pathModule = await import("path");
+      const excelDir = pathModule.resolve(process.cwd(), "docs/form_by_n8n");
+
+      const arPath = pathModule.join(excelDir, "نموذج-الأعضاء-عربي.xlsx");
+      const enPath = pathModule.join(excelDir, "SCVA-Members-Template-EN.xlsx");
+
+      // Count rows to include in caption
+      let rowCount = 0;
+      if (fsModule.default.existsSync(arPath)) {
+        const buf  = fsModule.default.readFileSync(arPath);
+        const wb   = XLSX.default.read(buf, { type: "buffer" });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.default.utils.sheet_to_json(ws, { header: 1 }) as unknown[][];
+        rowCount   = Math.max(0, rows.length - 1);
+      }
+
+      const tgBase = `https://api.telegram.org/bot${tgToken}`;
+      const caption = `📊 *تقرير يدوي — SCVA*\n✅ إجمالي الأعضاء المسجَّلين: *${rowCount}*\n⏰ ${new Date().toLocaleString("ar-SY", { timeZone: "Asia/Damascus" })}`;
+
+      const sendDoc = async (filePath: string, filename: string) => {
+        if (!fsModule.default.existsSync(filePath)) return { ok: false, description: "الملف غير موجود" };
+        const buf  = fsModule.default.readFileSync(filePath);
+        const form = new FormData();
+        form.append("chat_id", tgChat);
+        form.append("caption", caption);
+        form.append("document", new Blob([buf], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }), filename);
+        const r = await fetch(`${tgBase}/sendDocument`, { method: "POST", body: form });
+        return r.json() as Promise<{ ok: boolean; description?: string }>;
+      };
+
+      const [arResult, enResult] = await Promise.all([
+        sendDoc(arPath, "نموذج-الأعضاء-عربي.xlsx"),
+        sendDoc(enPath, "SCVA-Members-EN.xlsx"),
+      ]);
+
+      if (arResult.ok && enResult.ok) {
+        console.log(`[TELEGRAM] ✅ تم إرسال ملفَي Excel يدوياً (${rowCount} عضو)`);
+        res.json({ success: true, message: `تم إرسال الملفَين إلى Telegram بنجاح (${rowCount} عضو مسجَّل)` });
+      } else {
+        const err = arResult.description || enResult.description || "خطأ غير معروف";
+        res.status(500).json({ success: false, message: `فشل الإرسال: ${err}` });
+      }
+    } catch (err) {
+      next(err);
+    }
+  });
+
   app.get("/api/admin/excel-download", requireAdmin, async (req, res, next) => {
     try {
       const lang = req.query.lang === "en" ? "en" : "ar";

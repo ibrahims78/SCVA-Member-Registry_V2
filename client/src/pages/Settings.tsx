@@ -225,6 +225,9 @@ export default function Settings() {
   const [isTestingTelegram, setIsTestingTelegram] = useState(false);
   const [telegramTestResult, setTelegramTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isSavingTelegramSettings, setIsSavingTelegramSettings] = useState(false);
+  const [isClearingExcel, setIsClearingExcel] = useState(false);
+  const [isSendingExcelTelegram, setIsSendingExcelTelegram] = useState(false);
+  const [sendExcelTelegramResult, setSendExcelTelegramResult] = useState<{ success: boolean; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const subFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -395,6 +398,35 @@ export default function Settings() {
       toast({ title: isAr ? "خطأ في الحفظ" : "Save failed", variant: "destructive" });
     } finally {
       setIsSavingTelegramSettings(false);
+    }
+  };
+
+  const handleClearExcel = async () => {
+    if (!window.confirm(isAr ? "هل أنت متأكد من مسح جميع بيانات ملفَي Excel؟ لا يمكن التراجع عن هذا الإجراء." : "Are you sure you want to clear all Excel data? This cannot be undone.")) return;
+    setIsClearingExcel(true);
+    try {
+      const res = await apiRequest("POST", "/api/admin/clear-excel");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "فشل المسح");
+      toast({ title: isAr ? "✅ تم المسح" : "✅ Cleared", description: isAr ? "تم مسح بيانات ملفَي Excel بنجاح." : "Both Excel files have been cleared." });
+    } catch (e: unknown) {
+      toast({ title: isAr ? "خطأ في المسح" : "Clear failed", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setIsClearingExcel(false);
+    }
+  };
+
+  const handleSendExcelTelegram = async () => {
+    setIsSendingExcelTelegram(true);
+    setSendExcelTelegramResult(null);
+    try {
+      const res = await apiRequest("POST", "/api/admin/send-excel-telegram");
+      const data = await res.json();
+      setSendExcelTelegramResult({ success: data.success, message: data.message });
+    } catch {
+      setSendExcelTelegramResult({ success: false, message: isAr ? "فشل الاتصال بالخادم" : "Failed to connect to server" });
+    } finally {
+      setIsSendingExcelTelegram(false);
     }
   };
 
@@ -982,16 +1014,16 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Excel Files Download */}
+              {/* Excel Files Download + Clear */}
               <div className="rounded-md border border-border bg-muted/30 p-4 space-y-3">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                   <FileSpreadsheet className="h-3.5 w-3.5" />
-                  {isAr ? "تحميل ملفات Excel المحدَّثة" : "Download updated Excel files"}
+                  {isAr ? "ملفات Excel على السيرفر" : "Server Excel files"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {isAr
-                    ? "حمّل ملفات Excel بعد اكتمال تسجيلات الأعضاء لمراجعة البيانات."
-                    : "Download the Excel files after member registrations are complete to review the data."}
+                    ? "حمّل ملفات Excel لمراجعة البيانات، أو امسح البيانات لبدء دورة تسجيل جديدة."
+                    : "Download Excel files to review data, or clear them to start a new registration cycle."}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -1023,6 +1055,23 @@ export default function Settings() {
                       <Download className="h-3.5 w-3.5" />
                     )}
                     {isAr ? "تحميل ملف Excel الإنجليزي" : "Download English Excel"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/60 hover:bg-destructive/5"
+                    onClick={handleClearExcel}
+                    disabled={isClearingExcel}
+                  >
+                    {isClearingExcel ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                    {isClearingExcel
+                      ? (isAr ? "جارٍ المسح..." : "Clearing...")
+                      : (isAr ? "مسح بيانات Excel" : "Clear Excel data")}
                   </Button>
                 </div>
               </div>
@@ -1458,6 +1507,48 @@ export default function Settings() {
                   ? (isAr ? "جارٍ الحفظ..." : "Saving...")
                   : (isAr ? "حفظ إعدادات Telegram" : "Save Telegram settings")}
               </Button>
+
+              {/* Manual Excel send to Telegram */}
+              <div className="rounded-md border border-[#2AABEE]/20 bg-[#2AABEE]/5 p-4 space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-[#2AABEE]" />
+                  {isAr ? "إرسال ملفات Excel يدوياً" : "Send Excel files manually"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? "أرسل ملفَي Excel الحالييَن إلى Telegram فوراً دون انتظار الإرسال التلقائي."
+                    : "Send the current Excel files to Telegram immediately without waiting for the automatic send."}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-[#2AABEE]/30 hover:border-[#2AABEE]/60 hover:bg-[#2AABEE]/10 text-[#2AABEE]"
+                  onClick={handleSendExcelTelegram}
+                  disabled={isSendingExcelTelegram}
+                >
+                  {isSendingExcelTelegram ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5" />
+                  )}
+                  {isSendingExcelTelegram
+                    ? (isAr ? "جارٍ الإرسال..." : "Sending...")
+                    : (isAr ? "إرسال ملفات Excel الآن" : "Send Excel files now")}
+                </Button>
+                {sendExcelTelegramResult && (
+                  <div className={`rounded-md border px-3 py-2 text-xs flex items-start gap-2 ${
+                    sendExcelTelegramResult.success
+                      ? "border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
+                      : "border-destructive/30 bg-destructive/5 text-destructive"
+                  }`}>
+                    {sendExcelTelegramResult.success
+                      ? <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      : <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />}
+                    <span>{sendExcelTelegramResult.message}</span>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </CardContent>
