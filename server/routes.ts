@@ -1041,7 +1041,7 @@ export async function registerRoutes(
     }
   });
 
-  // ---------- Public: append member row to Excel file (called by n8n) ----------
+  // ---------- Public: append member row to DB (called by n8n) ----------
   // Authentication: Bearer token (Authorization header) OR ?key= query param
   app.post("/api/public/append-excel", async (req, res, next) => {
     try {
@@ -1056,134 +1056,53 @@ export async function registerRoutes(
       }
 
       const data = req.body as Record<string, unknown>;
-
-      const XLSX = await import("xlsx");
-      const fsModule = await import("fs");
-      const pathModule = await import("path");
-
-      const excelDir = pathModule.resolve(process.cwd(), "docs/form_by_n8n");
       const clean = (v: unknown) => (v != null ? String(v).trim() : "");
 
-      // ── Translation maps — ensures both files always get correct labels ──
-      const AR_GENDER:     Record<string, string> = { male: "ذكر",              female: "أنثى" };
-      const AR_SPECIALTY:  Record<string, string> = { cardiology: "قلبية داخلية", cardiac_surgery: "جراحة قلب" };
-      const AR_MEMBERSHIP: Record<string, string> = { original: "عضو أصيل",     associate: "عضو مشارك" };
-      const EN_GENDER:     Record<string, string> = { male: "Male",              female: "Female" };
-      const EN_SPECIALTY:  Record<string, string> = { cardiology: "Cardiology",  cardiac_surgery: "Cardiac Surgery" };
-      const EN_MEMBERSHIP: Record<string, string> = { original: "Original Member", associate: "Associate Member" };
-
-      // Raw keys are always available from the format-data n8n node
-      const gRaw = clean(data.genderRaw         ?? data.gender).toLowerCase();
-      const sRaw = clean(data.specialtyRaw       ?? data.specialty).toLowerCase();
-      const mRaw = clean(data.membershipTypeRaw  ?? data.membershipType).toLowerCase();
-
+      const gRaw = clean(data.genderRaw        ?? data.gender).toLowerCase();
+      const sRaw = clean(data.specialtyRaw      ?? data.specialty).toLowerCase();
+      const mRaw = clean(data.membershipTypeRaw ?? data.membershipType).toLowerCase();
       const submittedAt = clean(data.submittedAt ?? new Date().toISOString());
+      const lang = clean(data.language) || "ar";
 
-      const AR_HEADERS = [
-        "الاسم الأول", "الكنية", "الاسم بالعربية", "اسم الأب",
-        "الاسم بالإنجليزية", "تاريخ الميلاد", "الجنس", "التخصص",
-        "البريد الإلكتروني", "رقم الهاتف", "المدينة", "عنوان العمل",
-        "تاريخ الانضمام", "نوع العضوية", "معرّف الجمعية الأوروبية", "تاريخ التسجيل",
-      ];
-      const EN_HEADERS = [
-        "First name", "Last name", "Full name (Arabic)", "Father's name",
-        "Full name (English)", "Date of birth", "Gender", "Specialty",
-        "Email", "Phone", "City", "Work address",
-        "Join date", "Membership type", "ESC ID", "Submitted at",
-      ];
-
-      const arRow = [
-        clean(data.firstName),   clean(data.lastName),    clean(data.fullName),
-        clean(data.fatherName),  clean(data.englishName), clean(data.birthDate),
-        AR_GENDER[gRaw]     || clean(data.gender),
-        AR_SPECIALTY[sRaw]  || clean(data.specialty),
-        clean(data.email),       clean(data.phone),       clean(data.city),
-        clean(data.workAddress), clean(data.joinDate),
-        AR_MEMBERSHIP[mRaw] || clean(data.membershipType),
-        clean(data.escId),       submittedAt,
-      ];
-      const enRow = [
-        clean(data.firstName),   clean(data.lastName),    clean(data.fullName),
-        clean(data.fatherName),  clean(data.englishName), clean(data.birthDate),
-        EN_GENDER[gRaw]     || clean(data.genderRaw     ?? data.gender),
-        EN_SPECIALTY[sRaw]  || clean(data.specialtyRaw  ?? data.specialty),
-        clean(data.email),       clean(data.phone),       clean(data.city),
-        clean(data.workAddress), clean(data.joinDate),
-        EN_MEMBERSHIP[mRaw] || clean(data.membershipTypeRaw ?? data.membershipType),
-        clean(data.escId),       submittedAt,
-      ];
-
-      const arFilePath = pathModule.join(excelDir, "نموذج-الأعضاء-عربي.xlsx");
-      const enFilePath = pathModule.join(excelDir, "SCVA-Members-Template-EN.xlsx");
-
-      // Helper: load existing workbook or create a fresh one with headers
-      const loadOrCreate = (filePath: string, headers: string[], sheetName: string) => {
-        if (fsModule.default.existsSync(filePath)) {
-          const buf = fsModule.default.readFileSync(filePath);
-          const wb = XLSX.default.read(buf, { type: "buffer" });
-          const sn = wb.SheetNames[0];
-          const ws = wb.Sheets[sn];
-          const rows = XLSX.default.utils.sheet_to_json(ws, { header: 1 }) as unknown[][];
-          if (rows.length === 0) {
-            const freshWs = XLSX.default.utils.aoa_to_sheet([headers]);
-            wb.Sheets[sn] = freshWs;
-            return { wb, ws: freshWs, rows: [headers] as unknown[][] };
-          }
-          return { wb, ws, rows };
-        }
-        const wb = XLSX.default.utils.book_new();
-        const ws = XLSX.default.utils.aoa_to_sheet([headers]);
-        XLSX.default.utils.book_append_sheet(wb, ws, sheetName);
-        return { wb, ws, rows: [headers] as unknown[][] };
-      };
-
-      // ── Duplicate detection (checks Arabic file — primary source of truth) ──
-      const { wb: arWb, ws: arWs, rows: arRows } = loadOrCreate(arFilePath, AR_HEADERS, "الأعضاء");
-      if (arRows.length > 1) {
-        const inEmail    = String(data.email       ?? "").trim().toLowerCase();
-        const inFullName = String(data.fullName    ?? "").trim();
-        const inEnName   = String(data.englishName ?? "").trim();
-        const inFirst    = String(data.firstName   ?? "").trim();
-        const inLast     = String(data.lastName    ?? "").trim();
-
-        for (const row of arRows.slice(1) as unknown[][]) {
-          const rowEmail    = row[8] != null ? String(row[8]).trim().toLowerCase() : "";
-          const rowFullName = row[2] != null ? String(row[2]).trim()               : "";
-          const rowEnName   = row[4] != null ? String(row[4]).trim()               : "";
-          const rowFirst    = row[0] != null ? String(row[0]).trim()               : "";
-          const rowLast     = row[1] != null ? String(row[1]).trim()               : "";
-
-          const emailMatch = inEmail && rowEmail && rowEmail === inEmail;
-          const nameMatch  =
-            !inEmail &&
-            inFirst && rowFirst === inFirst && inLast && rowLast === inLast &&
-            ((!inFullName && !rowFullName) || rowFullName === inFullName) &&
-            ((!inEnName   && !rowEnName)   || rowEnName   === inEnName);
-
-          if (emailMatch || nameMatch) {
-            console.log(`[EXCEL] تم رفض تسجيل مكرر: ${inEmail || inFullName}`);
-            return res.json({ success: true, isDuplicate: true, message: "هذا العضو مسجّل مسبقاً في الملف — لم تتم الإضافة." });
-          }
-        }
+      // ── Duplicate detection via DB ──
+      const isDup = await storage.isDuplicateFormSubmission(
+        clean(data.email),
+        clean(data.firstName),
+        clean(data.lastName),
+        clean(data.fullName),
+        clean(data.englishName),
+      );
+      if (isDup) {
+        console.log(`[DB] تم رفض تسجيل مكرر: ${clean(data.email) || clean(data.fullName)}`);
+        return res.json({ success: true, isDuplicate: true, message: "هذا العضو مسجّل مسبقاً في الملف — لم تتم الإضافة." });
       }
-      // ─────────────────────────────────────────────────────────────────────
 
-      // Write to Arabic file (wb/ws already loaded above — reuse them)
-      XLSX.default.utils.sheet_add_aoa(arWs, [arRow], { origin: -1 });
-      const arBuffer = XLSX.default.write(arWb, { type: "buffer", bookType: "xlsx" }) as Buffer;
-      fsModule.default.writeFileSync(arFilePath, arBuffer);
+      // ── Save to PostgreSQL (persistent across restarts) ──
+      await storage.createFormSubmission({
+        firstName:         clean(data.firstName),
+        lastName:          clean(data.lastName),
+        fullName:          clean(data.fullName),
+        fatherName:        clean(data.fatherName),
+        englishName:       clean(data.englishName),
+        birthDate:         clean(data.birthDate),
+        gender:            clean(data.gender),
+        genderRaw:         gRaw,
+        specialty:         clean(data.specialty),
+        specialtyRaw:      sRaw,
+        email:             clean(data.email),
+        phone:             clean(data.phone),
+        city:              clean(data.city),
+        workAddress:       clean(data.workAddress),
+        joinDate:          clean(data.joinDate),
+        membershipType:    clean(data.membershipType),
+        membershipTypeRaw: mRaw,
+        escId:             clean(data.escId),
+        language:          lang,
+        submittedAt,
+      });
 
-      // Write to English file
-      const { wb: enWb, ws: enWs } = loadOrCreate(enFilePath, EN_HEADERS, "Members");
-      XLSX.default.utils.sheet_add_aoa(enWs, [enRow], { origin: -1 });
-      const enBuffer = XLSX.default.write(enWb, { type: "buffer", bookType: "xlsx" }) as Buffer;
-      fsModule.default.writeFileSync(enFilePath, enBuffer);
-
-      // Count data rows (excluding header) to decide whether to send to Telegram
-      const dataRowCount = arRows.length; // arRows already includes header + existing rows before this insert
-      const totalAfterInsert = dataRowCount; // new row was appended above
-
-      console.log(`[EXCEL] أُضيف صف جديد إلى الملفين — إجمالي البيانات: ${totalAfterInsert - 1} عضو`);
+      const totalAfterInsert = await storage.countFormSubmissions();
+      console.log(`[DB] أُضيف تسجيل جديد — إجمالي البيانات: ${totalAfterInsert} عضو`);
 
       const tgToken = settings.telegramBotToken?.trim() || "";
       const tgChat  = settings.telegramChatId?.trim()   || "";
@@ -1193,7 +1112,6 @@ export async function registerRoutes(
         (async () => {
           try {
             const c = (v: unknown) => (v != null ? String(v).trim() : "—") || "—";
-            const memberCount = totalAfterInsert - 1;
             const text =
               `🔔 <b>تسجيل عضو جديد — الرابطة السورية لأمراض وجراحة القلب</b>\n\n` +
               `👤 <b>الاسم:</b> ${c(data.fullName)}\n` +
@@ -1203,7 +1121,7 @@ export async function registerRoutes(
               `📍 <b>المدينة:</b> ${c(data.city)}\n` +
               `📞 <b>الهاتف:</b> ${c(data.phone)}\n` +
               `📧 <b>البريد:</b> ${c(data.email) !== "—" ? c(data.email) : "—"}\n\n` +
-              `📊 <b>إجمالي الأعضاء المسجَّلين:</b> ${memberCount}\n` +
+              `📊 <b>إجمالي الأعضاء المسجَّلين:</b> ${totalAfterInsert}\n` +
               `⏰ <i>${new Date().toLocaleString("ar-SY", { timeZone: "Asia/Damascus" })}</i>`;
 
             await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
@@ -1219,15 +1137,16 @@ export async function registerRoutes(
       }
 
       // ── Auto-send Excel files to Telegram every 10 entries ──
-      if (tgToken && tgChat && (totalAfterInsert - 1) % 10 === 0 && totalAfterInsert > 1) {
-        // Fire-and-forget — don't block the HTTP response
+      if (tgToken && tgChat && totalAfterInsert % 10 === 0 && totalAfterInsert > 0) {
         (async () => {
           try {
-            const count = totalAfterInsert - 1;
+            const allRows = await storage.getFormSubmissions();
+            const { buildExcelBuffers } = await import("./excelBuilder");
+            const { arBuffer, enBuffer } = buildExcelBuffers(allRows);
             const tgBase = `https://api.telegram.org/bot${tgToken}`;
+            const caption = `📊 *تقرير تلقائي — SCVA*\n✅ تم تسجيل *${totalAfterInsert}* عضواً حتى الآن\n⏰ ${new Date().toLocaleString("ar-SY", { timeZone: "Asia/Damascus" })}`;
 
-            // Helper: send one document via multipart/form-data using fetch + FormData
-            const sendDoc = async (buf: Buffer, filename: string, caption: string) => {
+            const sendDoc = async (buf: Buffer, filename: string) => {
               const form = new FormData();
               form.append("chat_id", tgChat);
               form.append("caption", caption);
@@ -1238,12 +1157,9 @@ export async function registerRoutes(
               return r.json();
             };
 
-            const caption = `📊 *تقرير تلقائي — SCVA*\n✅ تم تسجيل *${count}* عضواً حتى الآن\n⏰ ${new Date().toLocaleString("ar-SY", { timeZone: "Asia/Damascus" })}`;
-
-            await sendDoc(arBuffer, "نموذج-الأعضاء-عربي.xlsx", caption);
-            await sendDoc(enBuffer, "SCVA-Members-EN.xlsx", caption);
-
-            console.log(`[TELEGRAM] ✅ تم إرسال ملفَي Excel تلقائياً بعد ${count} إدخال`);
+            await sendDoc(arBuffer, "نموذج-الأعضاء-عربي.xlsx");
+            await sendDoc(enBuffer, "SCVA-Members-EN.xlsx");
+            console.log(`[TELEGRAM] ✅ تم إرسال ملفَي Excel تلقائياً بعد ${totalAfterInsert} إدخال`);
           } catch (tgErr) {
             console.error("[TELEGRAM] ❌ فشل إرسال ملفات Excel:", (tgErr as Error).message);
           }
@@ -1253,58 +1169,26 @@ export async function registerRoutes(
       res.json({
         success: true,
         isDuplicate: false,
-        message: "تمت إضافة البيانات إلى ملفَي الإكسل بنجاح (عربي وإنجليزي)",
-        files: ["نموذج-الأعضاء-عربي.xlsx", "SCVA-Members-Template-EN.xlsx"],
+        message: "تمت إضافة البيانات بنجاح وحُفظت في قاعدة البيانات",
+        total: totalAfterInsert,
       });
     } catch (err) {
       next(err);
     }
   });
 
-  // ---------- Admin: clear both Excel files (reset to headers only) ----------
+  // ---------- Admin: clear all form submissions from DB ----------
   app.post("/api/admin/clear-excel", requireAdmin, async (_req, res, next) => {
     try {
-      const XLSX     = await import("xlsx");
-      const fsModule = await import("fs");
-      const pathModule = await import("path");
-      const excelDir = pathModule.resolve(process.cwd(), "docs/form_by_n8n");
-
-      const AR_HEADERS = [
-        "الاسم الأول","الكنية","الاسم بالعربية","اسم الأب",
-        "الاسم بالإنجليزية","تاريخ الميلاد","الجنس","التخصص",
-        "البريد الإلكتروني","رقم الهاتف","المدينة","عنوان العمل",
-        "تاريخ الانضمام","نوع العضوية","معرّف الجمعية الأوروبية","تاريخ التسجيل",
-      ];
-      const EN_HEADERS = [
-        "First name","Last name","Full name (Arabic)","Father's name",
-        "Full name (English)","Date of birth","Gender","Specialty",
-        "Email","Phone","City","Work address",
-        "Join date","Membership type","ESC ID","Submitted at",
-      ];
-
-      const files = [
-        { name: "نموذج-الأعضاء-عربي.xlsx",       headers: AR_HEADERS, sheet: "الأعضاء" },
-        { name: "SCVA-Members-Template-EN.xlsx", headers: EN_HEADERS, sheet: "Members"  },
-      ];
-
-      for (const { name, headers, sheet } of files) {
-        const wb = XLSX.default.utils.book_new();
-        const ws = XLSX.default.utils.aoa_to_sheet([headers]);
-        XLSX.default.utils.book_append_sheet(wb, ws, sheet);
-        fsModule.default.writeFileSync(
-          pathModule.join(excelDir, name),
-          XLSX.default.write(wb, { type: "buffer", bookType: "xlsx" }),
-        );
-      }
-
-      console.log("[EXCEL] تم مسح بيانات الملفَين وإعادتهما للترويسات فقط");
-      res.json({ success: true, message: "تم مسح بيانات ملفَي Excel بنجاح" });
+      await storage.clearFormSubmissions();
+      console.log("[DB] تم مسح جميع بيانات التسجيلات من قاعدة البيانات");
+      res.json({ success: true, message: "تم مسح جميع بيانات التسجيلات بنجاح" });
     } catch (err) {
       next(err);
     }
   });
 
-  // ---------- Admin: manually send both Excel files to Telegram ----------
+  // ---------- Admin: manually send both Excel files to Telegram (generated from DB) ----------
   app.post("/api/admin/send-excel-telegram", requireAdmin, async (_req, res, next) => {
     try {
       const settings = await storage.getFormSettings();
@@ -1315,30 +1199,15 @@ export async function registerRoutes(
         return res.status(400).json({ success: false, message: "إعدادات Telegram غير مضبوطة. أدخل التوكن ومعرّف المحادثة واحفظهما أولاً." });
       }
 
-      const XLSX     = await import("xlsx");
-      const fsModule = await import("fs");
-      const pathModule = await import("path");
-      const excelDir = pathModule.resolve(process.cwd(), "docs/form_by_n8n");
-
-      const arPath = pathModule.join(excelDir, "نموذج-الأعضاء-عربي.xlsx");
-      const enPath = pathModule.join(excelDir, "SCVA-Members-Template-EN.xlsx");
-
-      // Count rows to include in caption
-      let rowCount = 0;
-      if (fsModule.default.existsSync(arPath)) {
-        const buf  = fsModule.default.readFileSync(arPath);
-        const wb   = XLSX.default.read(buf, { type: "buffer" });
-        const ws   = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.default.utils.sheet_to_json(ws, { header: 1 }) as unknown[][];
-        rowCount   = Math.max(0, rows.length - 1);
-      }
+      const allRows = await storage.getFormSubmissions();
+      const rowCount = allRows.length;
+      const { buildExcelBuffers } = await import("./excelBuilder");
+      const { arBuffer, enBuffer } = buildExcelBuffers(allRows);
 
       const tgBase = `https://api.telegram.org/bot${tgToken}`;
       const caption = `📊 *تقرير يدوي — SCVA*\n✅ إجمالي الأعضاء المسجَّلين: *${rowCount}*\n⏰ ${new Date().toLocaleString("ar-SY", { timeZone: "Asia/Damascus" })}`;
 
-      const sendDoc = async (filePath: string, filename: string) => {
-        if (!fsModule.default.existsSync(filePath)) return { ok: false, description: "الملف غير موجود" };
-        const buf  = fsModule.default.readFileSync(filePath);
+      const sendDoc = async (buf: Buffer, filename: string) => {
         const form = new FormData();
         form.append("chat_id", tgChat);
         form.append("caption", caption);
@@ -1350,8 +1219,8 @@ export async function registerRoutes(
       };
 
       const [arResult, enResult] = await Promise.all([
-        sendDoc(arPath, "نموذج-الأعضاء-عربي.xlsx"),
-        sendDoc(enPath, "SCVA-Members-EN.xlsx"),
+        sendDoc(arBuffer, "نموذج-الأعضاء-عربي.xlsx"),
+        sendDoc(enBuffer, "SCVA-Members-EN.xlsx"),
       ]);
 
       if (arResult.ok && enResult.ok) {
@@ -1369,19 +1238,15 @@ export async function registerRoutes(
   app.get("/api/admin/excel-download", requireAdmin, async (req, res, next) => {
     try {
       const lang = req.query.lang === "en" ? "en" : "ar";
-      const pathModule = await import("path");
-      const fsModule = await import("fs");
-
+      const allRows = await storage.getFormSubmissions();
+      const { buildExcelBuffers } = await import("./excelBuilder");
+      const { arBuffer, enBuffer } = buildExcelBuffers(allRows);
+      const buf = lang === "ar" ? arBuffer : enBuffer;
       const fileName = lang === "ar" ? "نموذج-الأعضاء-عربي.xlsx" : "SCVA-Members-Template-EN.xlsx";
-      const filePath = pathModule.resolve(process.cwd(), "docs/form_by_n8n", fileName);
-
-      if (!fsModule.default.existsSync(filePath)) {
-        return res.status(404).json({ message: "الملف غير موجود" });
-      }
 
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileName)}"`);
-      fsModule.default.createReadStream(filePath).pipe(res);
+      res.send(buf);
     } catch (err) {
       next(err);
     }

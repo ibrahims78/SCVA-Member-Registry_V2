@@ -39,6 +39,31 @@ export const subscriptions = pgTable("subscriptions", {
   date: text("date").notNull(),
 });
 
+export const formSubmissions = pgTable("form_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  firstName: text("first_name").notNull().default(""),
+  lastName: text("last_name").notNull().default(""),
+  fullName: text("full_name").notNull().default(""),
+  fatherName: text("father_name").notNull().default(""),
+  englishName: text("english_name").notNull().default(""),
+  birthDate: text("birth_date").notNull().default(""),
+  gender: text("gender").notNull().default(""),
+  genderRaw: text("gender_raw").notNull().default(""),
+  specialty: text("specialty").notNull().default(""),
+  specialtyRaw: text("specialty_raw").notNull().default(""),
+  email: text("email").notNull().default(""),
+  phone: text("phone").notNull().default(""),
+  city: text("city").notNull().default(""),
+  workAddress: text("work_address").notNull().default(""),
+  joinDate: text("join_date").notNull().default(""),
+  membershipType: text("membership_type").notNull().default(""),
+  membershipTypeRaw: text("membership_type_raw").notNull().default(""),
+  escId: text("esc_id").notNull().default(""),
+  language: text("language").notNull().default("ar"),
+  submittedAt: text("submitted_at").notNull().default(""),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
 export const formSettings = pgTable("form_settings", {
   id: varchar("id").primaryKey().default("singleton"),
   notificationEmail: text("notification_email").notNull().default(""),
@@ -126,6 +151,7 @@ export const insertFormSettingsSchema = z.object({
 
 export type FormSettings = typeof formSettings.$inferSelect;
 export type InsertFormSettings = z.infer<typeof insertFormSettingsSchema>;
+export type FormSubmission = typeof formSubmissions.$inferSelect;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -6,6 +6,7 @@ import {
   subscriptions,
   users,
   formSettings,
+  formSubmissions,
   type InsertMember,
   type InsertSubscription,
   type InsertUser,
@@ -13,6 +14,7 @@ import {
   type Member,
   type Subscription,
   type FormSettings,
+  type FormSubmission,
   type UpdateMember,
   type UpdateUser,
   type User,
@@ -56,6 +58,12 @@ export interface IStorage {
 
   getFormSettings(): Promise<FormSettings>;
   updateFormSettings(updates: InsertFormSettings): Promise<FormSettings>;
+
+  createFormSubmission(data: Omit<FormSubmission, "id" | "createdAt">): Promise<FormSubmission>;
+  getFormSubmissions(): Promise<FormSubmission[]>;
+  countFormSubmissions(): Promise<number>;
+  isDuplicateFormSubmission(email: string, firstName: string, lastName: string, fullName: string, englishName: string): Promise<boolean>;
+  clearFormSubmissions(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -314,6 +322,64 @@ export class DatabaseStorage implements IStorage {
       .where(eq(formSettings.id, "singleton"))
       .returning();
     return updated;
+  }
+
+  async createFormSubmission(data: Omit<FormSubmission, "id" | "createdAt">): Promise<FormSubmission> {
+    const [created] = await db.insert(formSubmissions).values(data).returning();
+    return created;
+  }
+
+  async getFormSubmissions(): Promise<FormSubmission[]> {
+    return db.select().from(formSubmissions).orderBy(formSubmissions.createdAt);
+  }
+
+  async countFormSubmissions(): Promise<number> {
+    const [row] = await db.select({ c: count() }).from(formSubmissions);
+    return Number(row?.c ?? 0);
+  }
+
+  async isDuplicateFormSubmission(
+    email: string,
+    firstName: string,
+    lastName: string,
+    fullName: string,
+    englishName: string,
+  ): Promise<boolean> {
+    const all = await db.select({
+      email: formSubmissions.email,
+      firstName: formSubmissions.firstName,
+      lastName: formSubmissions.lastName,
+      fullName: formSubmissions.fullName,
+      englishName: formSubmissions.englishName,
+    }).from(formSubmissions);
+
+    const inEmail = email.toLowerCase().trim();
+    const inFirst = firstName.trim();
+    const inLast  = lastName.trim();
+    const inFull  = fullName.trim();
+    const inEn    = englishName.trim();
+
+    for (const row of all) {
+      const rEmail = (row.email ?? "").toLowerCase().trim();
+      const rFirst = (row.firstName ?? "").trim();
+      const rLast  = (row.lastName  ?? "").trim();
+      const rFull  = (row.fullName  ?? "").trim();
+      const rEn    = (row.englishName ?? "").trim();
+
+      const emailMatch = inEmail && rEmail && rEmail === inEmail;
+      const nameMatch  =
+        !inEmail &&
+        inFirst && rFirst === inFirst && inLast && rLast === inLast &&
+        ((!inFull && !rFull) || rFull === inFull) &&
+        ((!inEn   && !rEn)   || rEn   === inEn);
+
+      if (emailMatch || nameMatch) return true;
+    }
+    return false;
+  }
+
+  async clearFormSubmissions(): Promise<void> {
+    await db.delete(formSubmissions);
   }
 }
 
